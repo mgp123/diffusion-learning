@@ -58,11 +58,10 @@ class DiffusionUnet(torch.nn.Module):
             x = encoder_block(x)
             skip_connections.append(x)
             
-        skip_connections[-1] = torch.zeros_like(skip_connections[-1])
         
         for decoder_block in self.decoder_blocks:
             residual = skip_connections.pop()
-            x = x + (2**0.5) * residual
+            x = (2**(-0.5)) * (x + residual)
             x = decoder_block(x)
             
         return x
