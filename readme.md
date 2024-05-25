@@ -44,8 +44,24 @@ A cool way to see this is that the diffusion process gradually transforms the or
 
 Now, to get the distribution we are interested in, we could take advantage that $X_T$ has a known distribution and use the conditional trajectory
 
-$p(X_0,X_1,...|x_T)$
+```
+Sample XT from Normal(0,I)
+for t in T-1...0
+    Sample Xt from p(Xt|X(t+1), X(t+2),...,XT)
+Output X0
+```
+
+However, while **the forward distributions $X_t| X_{t-1}$ are simple gaussianss, the backward distributions $X_t| X_{t+1}, X_{t+2,...}$ are hard**
 
 
+## The Diffusion models approach
+The strategy can be seen as a VAE actually 
 
-Suppose we had a model with parameters $\theta$
+![vae](img/vae.png)
+
+
+Suppose we had a model with parameters $\theta$ that, somehow, produces trajectories. That is, it produces $(\hat{X}_0,\hat{X}_1,...,\hat{X}_T)$
+
+If we want to maximize the probability of generating the dataset we can go with the ELBO route.
+
+
