@@ -86,20 +86,31 @@ Suppose we had a model with parameters $\theta$ that, somehow, produces trajecto
 
 Our proxy for learning the dynamics, as usual, is going to be the log-likelihood. Using the ELBO we have 
 
-$$\log p_\theta(x_{0}) \geq E_{{X}_{1:T}|x_0} \left[\log \frac{p_\theta(x_0, {X}_{1:T})}{p({X}_{1:T}|x_0)} \right]$$
+$$\log p_\theta(x_{0}) \geq E_{{X}_{1:T}|x_0} \left[\log \frac{p_\theta(x_0, {X}_{1:T})}{p({X}_{1:T}|x_0)} \right] $$
 
-We can expand both the true markov chain and our parametrized one using the (backward) markov proprety
+We can expand both the true markov chain and our parametrized one using the (backward) markov property
+
+- $$ p_\theta(x_0, {X}_{1:T})= p_\theta(x_{0}|{X_{1}}) \left( \prod_{t=1}^{T-1} p_\theta(X_{t}|{X_{t+1}}) \right) p_\theta(X_T)  $$
+
+- $$ p({X}_{1:T}|x_0)=  \left( \prod_{t=1}^{T-1} p(X_{t}|{X_{t+1}}, x_0) \right) p(X_T|x_0) $$
+
+
+
+
 Then we use the log to change the product into a sum
 
-$$= E_{ {X}_{1:T}|x_0} \left[ \sum^{T-1}_{t=0} \log \frac{p_\theta(X_{t}|{X_{t+1}})} {p(X_{t}|{X_{t+1}})} + \frac {\log p_\theta(X_T)} {\log p(X_T)}  + \log p(x_0) \right]$$
-
-(note that we are abusing notation on the summation and using $X_0$ instead of $x_0$ but I think it's clear that we are referring to the latter and not the random variable)
-
-Now, as $X_T \sim N(0,I)$, it does not depend on $\theta$. So $\log p_\theta(X_T)$ so the second term is the constant 1. The third term does not depend on $\theta$ so we can ignore it.
 
 
+$$= E_{ {X}_{1:T}|x_0} \left[ \left( \sum^{T-1}_{t=1} \log \frac{p_\theta(X_{t}|{X_{t+1}})} {p(X_{t}|{X_{t+1}},x_0)} \right) + \frac {\log p_\theta(X_T)} {\log p(X_T|x_0)}  + \log p_\theta(x_0|X_1)  \right]$$
 
-If we want to maximize the probability of generating the dataset we can go with the ELBO route.
+
+Note that, as $X_T \sim N(0,I)$, it does not depend on $\theta$. So the second term is a constant we can ignore. The first term is also a sum of KL divergences
+
+$$ =   \left( \sum^{T-1}_{t=1} -KL\left(p(X_t|X_{t+1},x_0) \mid \mid p_\theta(X_t|X_{t+1})\right)  \right) + \text{c}  + E_{ {X}_{1:T}|x_0} \left[ \log p_\theta(x_0|X_1)  \right] $$
+
+
+## How do we even sample such a thing?
+Suppose we effectively train the model. How are we going to actually sample it?
 
 
 ## References
