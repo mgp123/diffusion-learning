@@ -53,9 +53,7 @@ $$ = \frac{  p(a_{k}| a_{k-1} ) p(a_{c:k-1}) }{p(a_{k}| a_{k-1} ) p(a_{c+1:k-1})
 And so $p(a_c | a_{c+1:k})= p(a_c | a_{c+1}) \blacksquare$
 
 ## Forward and backward chain
-The markov chain gives us a tuple of random variables $(X_0,X_1,...,X_T)$
-
-With marginal distributions 
+The markov chain gives us a tuple of random variables $(X_0,X_1,...,X_T)$ with marginal distributions such that
 
 - $X_0 \sim u $
 - $X_T \sim N(0,I)$
@@ -80,11 +78,13 @@ The end goal is to have a model that can approximate the backward dynamics $p_\t
 
 The strategy can be seen as a VAE with a "dumb" encoder actually (non-parametrized)
 
-![vae](img/vae.png)
 
-Suppose we had a model with parameters $\theta$ that, somehow, produces trajectories. That is, it produces $(\hat{X}_0,\hat{X}_1,...,\hat{X}_T)$
+Let's forget about that for now. Suppose we had some backward markov model with parameters $\theta$ that produces trajectories. That is, it generates $(\hat{X}_0,\hat{X}_1,...,\hat{X}_T)$ sammpling $\hat{X}_T$ from $N(0,I)$. We are not concerned with this model mimicking the backward dynamics of the original markov chain.
 
-Our proxy for learning the dynamics, as usual, is going to be the log-likelihood. Using the ELBO we have 
+
+We'd like our backward markov model to learn to generate the samples. That is $p_\theta(x_0) \simeq p(x_0)$.
+
+Our proxy for learning this, as usual, is going to be the log-likelihood. Using the ELBO we have 
 
 $$\log p_\theta(x_{0}) \geq E_{{X}_{1:T}|x_0} \left[\log \frac{p_\theta(x_0, {X}_{1:T})}{p({X}_{1:T}|x_0)} \right] $$
 
@@ -95,23 +95,45 @@ We can expand both the true markov chain and our parametrized one using the (bac
 - $$ p({X}_{1:T}|x_0)=  \left( \prod_{t=1}^{T-1} p(X_{t}|{X_{t+1}}, x_0) \right) p(X_T|x_0) $$
 
 
+Note that the products start at $t=1$ because $x_0$ is not a random variable. It's fixed, so we handle it slightly different
 
 
 Then we use the log to change the product into a sum
 
 
 
-$$= E_{ {X}_{1:T}|x_0} \left[ \left( \sum^{T-1}_{t=1} \log \frac{p_\theta(X_{t}|{X_{t+1}})} {p(X_{t}|{X_{t+1}},x_0)} \right) + \frac {\log p_\theta(X_T)} {\log p(X_T|x_0)}  + \log p_\theta(x_0|X_1)  \right]$$
+$$= E_{ {X}_{1:T}|x_0} \left[ \left( \sum^{T-1}_{t=1} \log \frac{p_\theta(X_{t}|{X_{t+1}})} {p(X_{t}|{X_{t+1}},x_0)} \right) + \log \frac { p_\theta(X_T)} { p(X_T|x_0)}  + \log p_\theta(x_0|X_1)  \right]$$
 
 
-Note that, as $X_T \sim N(0,I)$, it does not depend on $\theta$. So the second term is a constant we can ignore. The first term is also a sum of KL divergences
+Note that, we always have that $X_T \sim N(0,I)$, it does not depend on $\theta$ nor on $x_0$. So the second term is 0. The first term is also a sum of KL divergences
 
-$$ =   \left( \sum^{T-1}_{t=1} -KL\left(p(X_t|X_{t+1},x_0) \mid \mid p_\theta(X_t|X_{t+1})\right)  \right) + \text{c}  + E_{ {X}_{1:T}|x_0} \left[ \log p_\theta(x_0|X_1)  \right] $$
+$$ =   \left( \sum^{T-1}_{t=1} -KL\left(p(X_t|X_{t+1},x_0) \mid \mid p_\theta(X_t|X_{t+1})\right)  \right)   + E_{ {X}_{1}|x_0} \left[ \log p_\theta(x_0|X_1)  \right] $$
+
+
+## Is the model actually learning the backward dynamics?
+Add $X_0$ to the expectation to make this a lower bound on the log-likelihood of generating the dataset. That is, our target is
+
+$$ L =  E_{{X}_{0:T}} \left[\log \frac{p_\theta({X}_{0:T})}{p({X}_{1:T}|X_0)} \right] $$
+
+Let's redo the development of the last section but using 
+
+- $$ p({X}_{1:T}|X_0)=  \frac{p({X}_{0:T})} { p(X_0)} =  \prod^{T-1}_{t=0} p({X}_{t}|X_{t+1}) \frac{p(X_T)} { p(X_0)} $$
+
+
+Which leads to 
+
+$$L = E_{ {X}_{0:T}} \left[ \left( \sum^{T-1}_{t=0} \log \frac{p_\theta(X_{t}|{X_{t+1}})} {p(X_{t}|{X_{t+1}})} \right) + \log \frac { p_\theta(X_T)} { p(X_T)} - \log p(X_0)  \right]$$
+
+$$ =   \left( \sum^{T-1}_{t=0} -KL\left(p(X_t|X_{t+1}) \mid \mid p_\theta(X_t|X_{t+1})\right)  \right) + 0 + H(X_0) $$
+
+**So we are truly learning the markov model backward dynamics!**
 
 
 ## How do we even sample such a thing?
 Suppose we effectively train the model. How are we going to actually sample it?
 
+Well, it's a markov model so once we have a trained model, as long as $p_\theta(x_{t+1}|x_t)$ is easy to sample we are good.
 
 ## References
+- Denoising Diffusion Probabilistic Models. *Jonathan Ho, Ajay Jain, Pieter Abbeel*. [Paper](https://arxiv.org/abs/2006.11239)
 - https://lilianweng.github.io/posts/2021-07-11-diffusion-models/ 
