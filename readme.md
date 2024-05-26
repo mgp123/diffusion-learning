@@ -86,12 +86,12 @@ Suppose we had a model with parameters $\theta$ that, somehow, produces trajecto
 
 Our proxy for learning the dynamics, as usual, is going to be the log-likelihood. Using the ELBO we have 
 
-$$ \log p_\theta(x_{0}) \geq E_{{X}_{1:T}|x_0} \left[\log \frac{p_\theta(x_0, {X}_{1:T})}{p({X}_{1:T}|x_0)} \right] $$
+$$\log p_\theta(x_{0}) \geq E_{{X}_{1:T}|x_0} \left[\log \frac{p_\theta(x_0, {X}_{1:T})}{p({X}_{1:T}|x_0)} \right]$$
 
 We can expand both the true markov chain and our parametrized one using the (backward) markov proprety
 Then we use the log to change the product into a sum
 
-$$ = E_{ {X}_{1:T}|x_0} \left[ \sum^{T-1}_{t=0} \log \frac{p_\theta(X_{t}|{X_{t+1}})} {p(X_{t}|{X_{t+1}})} + \frac {\log p_\theta(X_T)} {\log p(X_T)}  + \log p(x_0) \right]  $$
+$$= E_{ {X}_{1:T}|x_0} \left[ \sum^{T-1}_{t=0} \log \frac{p_\theta(X_{t}|{X_{t+1}})} {p(X_{t}|{X_{t+1}})} + \frac {\log p_\theta(X_T)} {\log p(X_T)}  + \log p(x_0) \right]$$
 
 (note that we are abusing notation on the summation and using $X_0$ instead of $x_0$ but I think it's clear that we are referring to the latter and not the random variable)
 
