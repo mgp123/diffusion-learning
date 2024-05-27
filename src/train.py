@@ -7,15 +7,14 @@ from tqdm import tqdm
 from model import DiffusionUnet
 from noise_scheudle import LinearSchedule
 
+image_size =  64
 dataset =torchvision.datasets.ImageFolder(
     root='dataset', 
     transform= transforms.Compose([
         transforms.ToTensor(),
         transforms.RandomHorizontalFlip(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225]),
-        transforms.Resize(128),
-        transforms.RandomCrop(128)
+        transforms.Resize(image_size),
+        transforms.RandomCrop(image_size)
     ])
     )
 
@@ -30,13 +29,21 @@ sample_every = 500
 epochs = 10
 batch_size=64
 unet_blocks = 2
+initial_channels = 64
 
 summary_writer = tensorboard.SummaryWriter()
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # model and optimizer
 noise_schedule = LinearSchedule(timesteps, device=device)
-model = DiffusionUnet(channels,blocks=unet_blocks, timesteps=timesteps).to(device)
+model = DiffusionUnet(
+    channels,
+    blocks=unet_blocks, 
+    timesteps=timesteps,
+    initial_channels=initial_channels
+    ).to(device)
+
+
 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
 # training loop
@@ -46,8 +53,10 @@ for epoch in range(epochs):
         # optimizer stuff
         optimizer.zero_grad()
         x = x.to(device)
+        # normalization
+        x = x * 2 - 1
         
-        # our three random variables, X_0, t, and epsilon
+        # our three random variables, x_0, t, and epsilon
         t = torch.randint(0, timesteps, (x.shape[0],), device=device)
         epsilon = torch.randn_like(x)
         
@@ -76,11 +85,16 @@ for epoch in range(epochs):
         if steps % sample_every == 0:
             with torch.no_grad():
                 model.eval()
-                z = torch.randn(9, channels, 128, 128, device=device)
+                z = torch.randn(9, channels, image_size, image_size, device=device)
                 sample = model.sample(z, noise_schedule)
+                sample = torch.clamp(sample, -1, 1)
+                # denormalize
+                sample = (sample + 1) / 2
                 torchvision.utils.save_image(sample, f"img/generations/sample_{steps}.png", nrow=3)
                 model.train()
-        
-        
+    
+    # save the model
+    torch.save(model.state_dict(), f"weights/model_{epoch}.pth")    
+    
 summary_writer.flush()
     

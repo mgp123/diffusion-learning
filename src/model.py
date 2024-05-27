@@ -145,7 +145,6 @@ class DiffusionUnet(nn.Module):
         ts = torch.arange(0, scheudler.timesteps, device=x.device)
         ts = torch.flip(ts, [0])
         
-        
         for t in tqdm(ts):
             epsilon = x = self(x, t)
             epsilon_multiplier =  scheudler.beta(t)/ torch.sqrt(scheudler.cumul_beta(t))
