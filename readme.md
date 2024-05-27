@@ -2,7 +2,7 @@
 A short review of diffusion models based on my understandings
 Diffusion models are generative models, ie they try to imitate a distribution
 
-## The markov chain
+## The diffsuion markov chain
 
 Take $X_0$ as a random variable indicating a sample from the dataset. This could be whatever as long as it's continuous. Take $u$ to be its distribution, our target is to construct a model in such a way that we can sample from a distribution that is similar to $u$
 
@@ -32,7 +32,9 @@ Using $\mu_0 = x_0, v_0 = 0$. (we are stretching a bit here using 0 variance gau
 
 $$ \mu_{t+1}  = \sqrt{\prod^t{ (1-\beta_t)}} *x_0 $$
 
-## A time-reversed markov chain is also a markov chain
+## Relevant notes on markov chains
+
+### A time-reversed markov chain is also a markov chain
 
 A short deviation to a relevant property that is not that obvious at first sight. Given a markov chain $A_1, A_2, A_3... A_k$. *The reversed process also has the Markov property*.  That is
 
@@ -52,13 +54,35 @@ $$ = \frac{  p(a_{k}| a_{k-1} ) p(a_{c:k-1}) }{p(a_{k}| a_{k-1} ) p(a_{c+1:k-1})
 
 And so $p(a_c | a_{c+1:k})= p(a_c | a_{c+1}) \blacksquare$
 
-## Forward and backward chain
+### Conditioning a markov chain from both sides 
+The markov property indicates that the future is independent of the past given the present. However, it is not necessarily independent of a further future even when knowing the present.
+
+This property might be easier to grasp with a simple example. Take the markov chain
+
+$$A_1  \rightarrow A_2 \rightarrow A_3 \rightarrow A_4$$
+
+With dyanmics given by
+- $A_1 \sim N(0,I) $
+- $ A_2 = A_1$
+- $A_3|A_2 \sim N(0,I)$
+- $A_4 = A_3$
+
+That is, this markov chain copies the random variable from step 1 to step 2 and from step 3 to step 4. Step 3 is independent of what happened before.
+
+Clearly, $p(A_3|A_2) \neq p(A_3|A_2, A_4)$. Knowing $A_4$ tells you everything about $A_3$, but $A_2$ has no information about $A_3$ at all.
+
+The same reasoning, by symmetry, applies to the backward direction $p(A_2|A_3) \neq p(A_2|A_3, A_1)$.
+
+## Forward and backward diffsuion chains
 The markov chain gives us a tuple of random variables $(X_0,X_1,...,X_T)$ with marginal distributions such that
 
 - $X_0 \sim u $
 - $X_T \sim N(0,I)$
 
 A cool way to see this is that the diffusion process gradually transforms the original distribution into the normal distribution. 
+
+![soft_moving](img/soft_moving.png)
+
 
 Now, to get the distribution we are interested in, we could take advantage that $X_T$ has a known distribution and use the conditional trajectory
 
@@ -86,7 +110,7 @@ We'd like our backward markov model to learn to generate the samples. That is $p
 
 Our proxy for learning this, as usual, is going to be the log-likelihood. Using the ELBO we have 
 
-$$\log p_\theta(x_{0}) \geq E_{{X}_{1:T}|x_0} [\log \frac{p_\theta(x_0, {X}_{1:T})}{p({X}_{1:T}|x_0)} ] $$
+$$\log p_\theta(x_{0}) \geq E_{{X}_{1:T}|x_0} \left[\log \frac{p_\theta(x_0, {X}_{1:T})}{p({X}_{1:T}|x_0)} \right] $$
 
 We can expand both the true markov chain and our parametrized one using the (backward) markov property
 
@@ -129,11 +153,17 @@ $$ =   \left( \sum^{T-1}_{t=0} -KL\left(p(X_t|X_{t+1}) \mid \mid p_\theta(X_t|X_
 **So we are truly learning the markov model backward dynamics!**
 
 
+## The $x_t|x_{t+1},x_0$ distribution is gaussian
+
+
 ## How do we even sample such a thing?
 Suppose we effectively train the model. How are we going to actually sample it?
+
 
 Well, it's a markov model so once we have a trained model, as long as $p_\theta(x_{t+1}|x_t)$ is easy to sample we are good.
 
 ## References
 - Denoising Diffusion Probabilistic Models. *Jonathan Ho, Ajay Jain, Pieter Abbeel*. [Paper](https://arxiv.org/abs/2006.11239)
 - https://lilianweng.github.io/posts/2021-07-11-diffusion-models/ 
+- Denoising Diffusion-based Generative Modeling: Foundations and Applications. *Karsten Kreis Ruiqi Gao Arash Vahdat*. [Link](https://cvpr2022-tutorial-diffusion-models.github.io/). This is a *really good one*
+
