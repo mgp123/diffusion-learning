@@ -1,5 +1,6 @@
 from torch import nn
-import torch 
+import torch
+import torchvision 
 from tqdm import tqdm
 
 class TimeEmbedding(nn.Module):
@@ -141,21 +142,37 @@ class DiffusionUnet(nn.Module):
         return x
     
     @torch.no_grad()
-    def sample(self, x, scheudler):
+    def sample(self, x, scheudler, collect_latents=False):
         ts = torch.arange(0, scheudler.timesteps, device=x.device)
         ts = torch.flip(ts, [0])
-        
+        collected_latents = []
         for t in tqdm(ts):
-            epsilon = x = self(x, t)
+            epsilon =  self(x, t)
+            
+            if collect_latents:
+                pred_original = (x - epsilon * torch.sqrt(scheudler.cumul_beta(t))) / torch.sqrt(scheudler.cumul_alpha(t))
+                image_grid = torchvision.utils.make_grid(pred_original, nrow=3)
+                collected_latents.append(image_grid)
+                
+                
             epsilon_multiplier =  scheudler.beta(t)/ torch.sqrt(scheudler.cumul_beta(t))
             x = (x - epsilon * epsilon_multiplier) / torch.sqrt(scheudler.alpha(t))
-            x = self(x, t)
             
-        return x
+            # we are goint to use sigma = beta for the backward pass
+            sigma = torch.sqrt(scheudler.beta(t))  * 1
+            x = x + torch.randn_like(x) * sigma
+            
+            x = torch.clamp(x, -1, 1)
         
-            
-m = DiffusionUnet(3,3)
+        if collect_latents:
+            collected_latents = torch.stack(collected_latents)
+            return x, collected_latents
+        else:
+            return x
 
-x = torch.randn(6, 3, 256, 256)
-t = torch.randint(0, 100, (6,))
+            
+# m = DiffusionUnet(3,3)
+
+# x = torch.randn(6, 3, 256, 256)
+# t = torch.randint(0, 100, (6,))
 

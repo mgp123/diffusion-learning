@@ -21,14 +21,16 @@ dataset =torchvision.datasets.ImageFolder(
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-# training hyperparameters and other stuff like that
-channels = 3
-timesteps = 1000
+# training hyperparameters 
 lr=1e-3
 sample_every = 500
 epochs = 10
-batch_size=64
-unet_blocks = 2
+batch_size = 64
+
+# model hyperparameters
+in_channels = 3
+blocks = 2
+timesteps = 1000
 initial_channels = 64
 
 summary_writer = tensorboard.SummaryWriter()
@@ -37,8 +39,8 @@ dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle
 # model and optimizer
 noise_schedule = LinearSchedule(timesteps, device=device)
 model = DiffusionUnet(
-    channels,
-    blocks=unet_blocks, 
+    in_channels=in_channels,
+    blocks=blocks, 
     timesteps=timesteps,
     initial_channels=initial_channels
     ).to(device)
@@ -85,7 +87,7 @@ for epoch in range(epochs):
         if steps % sample_every == 0:
             with torch.no_grad():
                 model.eval()
-                z = torch.randn(9, channels, image_size, image_size, device=device)
+                z = torch.randn((9, in_channels, image_size, image_size), device=device)
                 sample = model.sample(z, noise_schedule)
                 sample = torch.clamp(sample, -1, 1)
                 # denormalize
