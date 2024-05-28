@@ -31,7 +31,7 @@ class NoiseSchedule:
 
 
 class LinearSchedule(NoiseSchedule):
-    def __init__(self, timesteps, device="cpu", init_t= 1e-2, end_t=0.01):
+    def __init__(self, timesteps, device="cpu", init_t= 1e-4, end_t=0.01):
         self.init_t = init_t
         self.end_t = end_t
         super().__init__(timesteps,device)

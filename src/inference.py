@@ -4,20 +4,38 @@ from noise_scheudle import LinearSchedule
 import torchvision
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+saved = torch.load("weights/model_3.pth")
+model_hyperparameters = saved["model_hyperparameters"]
+image_size = saved["image_size"]
+
 # load the model from pth
 model = DiffusionUnet(
-    in_channels = 3,
-    blocks = 2,
-    timesteps = 1000,
-    initial_channels = 64
+    **model_hyperparameters
 )
-noise_schedule = LinearSchedule(1000, device=device)
+noise_schedule = LinearSchedule(model_hyperparameters["timesteps"], device=device)
+model.load_state_dict(saved["weights"])
 
-
-model.load_state_dict(torch.load("weights/model_0.pth"))
 model.to(device)
 model.eval()
-z = torch.randn((9, 3, 64, 64), device=device)
+
+def display_t_embeddings():
+    ts = torch.arange(0, noise_schedule.timesteps, device=device)
+
+    t_embeddings = model.t_embedding(ts)
+    normalized_t_embeddings = t_embeddings / t_embeddings.norm(dim=1, keepdim=True)
+
+    cos_sim = normalized_t_embeddings @ normalized_t_embeddings.T
+
+    import matplotlib.pyplot as plt
+    plt.imshow(cos_sim.cpu().detach())
+
+    plt.show()
+
+
+display_t_embeddings()
+
+
+z = torch.randn((9, 3, image_size, image_size), device=device)
 sample, images = model.sample(z, noise_schedule, collect_latents=True)
 
 images = images.cpu()

@@ -7,7 +7,7 @@ from tqdm import tqdm
 from model import DiffusionUnet
 from noise_scheudle import LinearSchedule
 
-image_size =  64
+image_size =  32
 dataset =torchvision.datasets.ImageFolder(
     root='dataset', 
     transform= transforms.Compose([
@@ -22,27 +22,31 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 # training hyperparameters 
-lr=1e-3
+lr=1e-4
 sample_every = 500
 epochs = 10
 batch_size = 64
 
 # model hyperparameters
-in_channels = 3
-blocks = 2
-timesteps = 1000
-initial_channels = 64
+model_hyperparameters= {
+    "in_channels" : 3,
+    "blocks" : 3,
+    "timesteps" : 500,
+    "initial_channels" : 64
+    }
+timesteps = model_hyperparameters["timesteps"]
+in_channels = model_hyperparameters["in_channels"]
+
 
 summary_writer = tensorboard.SummaryWriter()
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
+
+
 # model and optimizer
 noise_schedule = LinearSchedule(timesteps, device=device)
 model = DiffusionUnet(
-    in_channels=in_channels,
-    blocks=blocks, 
-    timesteps=timesteps,
-    initial_channels=initial_channels
+    **model_hyperparameters
     ).to(device)
 
 
@@ -96,7 +100,13 @@ for epoch in range(epochs):
                 model.train()
     
     # save the model
-    torch.save(model.state_dict(), f"weights/model_{epoch}.pth")    
+    torch.save(
+        {
+            "weights":model.state_dict(),
+            "model_hyperparameters":model_hyperparameters,
+            "image_size":image_size,
+        },
+        f"weights/model_{epoch}.pth")    
     
 summary_writer.flush()
     
