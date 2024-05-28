@@ -5,9 +5,9 @@ from torch.utils import tensorboard
 
 from tqdm import tqdm
 from model import DiffusionUnet
-from noise_scheudle import LinearSchedule
+from noise_scheudle import CosineSchedule, LinearSchedule
 
-image_size =  32
+image_size =  64
 dataset =torchvision.datasets.ImageFolder(
     root='dataset', 
     transform= transforms.Compose([
@@ -22,7 +22,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 # training hyperparameters 
-lr=1e-4
+lr=1e-3
 sample_every = 500
 epochs = 10
 batch_size = 64
@@ -31,8 +31,8 @@ batch_size = 64
 model_hyperparameters= {
     "in_channels" : 3,
     "blocks" : 3,
-    "timesteps" : 500,
-    "initial_channels" : 64
+    "timesteps" : 1000,
+    "initial_channels" : 128
     }
 timesteps = model_hyperparameters["timesteps"]
 in_channels = model_hyperparameters["in_channels"]
@@ -44,7 +44,7 @@ dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle
 
 
 # model and optimizer
-noise_schedule = LinearSchedule(timesteps, device=device)
+noise_schedule = CosineSchedule(timesteps, device=device)
 model = DiffusionUnet(
     **model_hyperparameters
     ).to(device)
@@ -59,6 +59,7 @@ for epoch in range(epochs):
         # optimizer stuff
         optimizer.zero_grad()
         x = x.to(device)
+        
         # normalization
         x = x * 2 - 1
         

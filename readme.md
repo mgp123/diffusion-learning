@@ -73,6 +73,8 @@ Clearly, $p(A_3|A_2) \neq p(A_3|A_2, A_4)$. Knowing $A_4$ tells you everything a
 
 The same reasoning, by symmetry, applies to the backward direction $p(A_2|A_3) \neq p(A_2|A_3, A_1)$.
 
+So, in general, when random variables in a markov chain are given the "boundary conditions" for some past and some future, they are independent of what happens before or after that boundary
+
 ## Forward and backward diffsuion chains
 The markov chain gives us a tuple of random variables $(X_0,X_1,...,X_T)$ with marginal distributions such that
 
@@ -161,6 +163,32 @@ Suppose we effectively train the model. How are we going to actually sample it?
 
 
 Well, it's a markov model so once we have a trained model, as long as $p_\theta(x_{t+1}|x_t)$ is easy to sample we are good.
+
+
+## On why there is a square root on the markov equation
+
+A bit odd thing to notice is that $x_t$ follows
+$$ x_t = \sqrt{\hat{\alpha_t}} x_0 + \sqrt{1 - \hat{\alpha_t}} \epsilon  $$
+
+Why are there square roots in there?
+
+A helpful insight is that this preseves variance.
+
+$$ Var(X_t) = \hat{\alpha_t} Var(X_0) + (1-\hat{\alpha_t}) $$
+
+Assuming $Var(X_0) = 1$ we get 
+
+$$ Var(X_t) = \hat{\alpha_t}  + (1-\hat{\alpha_t}) = 1$$
+
+If we where to remove the square root and simply do 
+
+$$  {\hat{\alpha_t}} x_0 + {1 - \hat{\alpha_t}} \epsilon  $$
+
+We would get a variance 
+
+$$ \hat{\alpha_t}^2  + (1-\hat{\alpha_t})^2 = 2 \hat{\alpha_t} (\hat{\alpha_t}-1) + 1 $$
+
+Which would vary as you advance in the markov chain. It would less variance between the extremes. How exactly, depends on the specific schedule we use. 
 
 ## References
 - Denoising Diffusion Probabilistic Models. *Jonathan Ho, Ajay Jain, Pieter Abbeel*. [Paper](https://arxiv.org/abs/2006.11239)

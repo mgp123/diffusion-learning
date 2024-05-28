@@ -41,3 +41,20 @@ class LinearSchedule(NoiseSchedule):
 
 
 
+class CosineSchedule(NoiseSchedule):
+    def __init__(self, timesteps, device="cpu", s=0.008):
+        self.s = s
+        super().__init__(timesteps,device)
+        
+    def all_betas(self):
+        ts = torch.linspace(0,1,self.timesteps)
+        ts = (ts + self.s)/ (1 + self.s)
+        ts = ts* torch.pi /2
+        f = torch.cos(ts)**2
+        
+        cum_alphas  = f/f[0]
+        betas = 1 - cum_alphas[1:]/cum_alphas[:-1]
+        betas = torch.cat([torch.tensor([0]),betas])
+        betas = torch.clamp(betas,0,0.999)
+        
+        return betas
