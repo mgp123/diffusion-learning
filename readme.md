@@ -172,7 +172,7 @@ $$ x_t = \sqrt{\hat{\alpha_t}} x_0 + \sqrt{1 - \hat{\alpha_t}} \epsilon  $$
 
 Why are there square roots in there?
 
-A helpful insight is that this preseves variance.
+A helpful insight is that this preserves variance.
 
 $$ Var(X_t) = \hat{\alpha_t} Var(X_0) + (1-\hat{\alpha_t}) $$
 
@@ -188,7 +188,7 @@ We would get a variance
 
 $$ \hat{\alpha_t}^2  + (1-\hat{\alpha_t})^2 = 2 \hat{\alpha_t} (\hat{\alpha_t}-1) + 1 $$
 
-Which would vary as you advance in the markov chain. It would less variance between the extremes. How exactly, depends on the specific schedule we use. 
+Which would vary as you advance in the markov chain. It would have less variance between the extremes. How exactly? It depends on the specific schedule we use. 
 
 ## References
 - Denoising Diffusion Probabilistic Models. *Jonathan Ho, Ajay Jain, Pieter Abbeel*. [Paper](https://arxiv.org/abs/2006.11239)
