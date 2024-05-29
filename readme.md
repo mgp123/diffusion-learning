@@ -139,7 +139,9 @@ $$ =   \left( \sum^{T-1}_{t=1} -KL\left(p(X_t|X_{t+1},x_0) \mid \mid p_\theta(X_
 ## Is the model actually learning the backward dynamics?
 Add $X_0$ to the expectation to make this a lower bound on the log-likelihood of generating the dataset. That is, our target is
 
-$$ L =  E_{{X}_{0:T}} \left[\log \frac{p_\theta({X}_{0:T})}{p({X}_{1:T}|X_0)} \right] $$
+
+$$L =  E_{{X}_{0:T}} \left[\log \frac{p_\theta({X}_{0:T})}{p({X}_{1:T}|X_0)} \right]$$
+
 
 Let's redo the development of the last section but using 
 
