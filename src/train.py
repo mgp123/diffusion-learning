@@ -22,7 +22,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 # training hyperparameters 
-lr=1e-3
+lr=2e-4
 sample_every = 500
 epochs = 10
 batch_size = 64
@@ -31,7 +31,7 @@ batch_size = 64
 model_hyperparameters= {
     "in_channels" : 3,
     "blocks" : 3,
-    "timesteps" : 1000,
+    "timesteps" : 100,
     "initial_channels" : 128
     }
 timesteps = model_hyperparameters["timesteps"]

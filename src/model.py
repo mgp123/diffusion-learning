@@ -92,8 +92,16 @@ class SelfAttentionBlock(nn.Module):
         k = self.key(x)
         v = self.value(x)
         
-        
         batch, channels, height, width = q.shape
+
+        pos_embedding = self.positional_embedding(torch.arange(0, height*width, device=x.device))
+        pos_embedding = pos_embedding.reshape(1, self.latent_size, height, width)
+        pos_embedding = pos_embedding.repeat(batch, 1, 1, 1)
+        
+        q = q + pos_embedding
+        k = k + pos_embedding
+        v = v + pos_embedding
+        
         # flatten to vector
         q = q.view(batch, channels, -1)
         k = k.view(batch, channels, -1)
@@ -193,7 +201,7 @@ class DiffusionUnet(nn.Module):
             out_channels *= 2
         
         
-        self.middle_block = SelfAttentionBlock(in_channels, (8, 8), 256)
+        self.middle_block = SelfAttentionBlock(in_channels, (16, 16), 512)
 
         
         # reverse the decoder list as it goes from low to high
@@ -210,8 +218,8 @@ class DiffusionUnet(nn.Module):
         
         for encoder_block, time_block in zip(self.encoder_blocks, self.time_blocks_down):
             x = encoder_block(x)
-            skip_connections.append(x)
             x = inv_root2 * (x + time_block(t))
+            skip_connections.append(x)
             
         
         x = self.middle_block(x) + x
@@ -243,14 +251,18 @@ class DiffusionUnet(nn.Module):
 
             x_prev = coeff_x0 * x0 + coeff_xt * x
 
-            # epsilon_multiplier =  scheudler.beta(t)/ torch.sqrt(scheudler.cumul_beta(t))
-            # x_prev = (x - epsilon * epsilon_multiplier) / torch.sqrt(scheudler.alpha(t))
+            epsilon_multiplier =  scheudler.beta(t)/ torch.sqrt(scheudler.cumul_beta(t))
+            x_prev = (x - epsilon * epsilon_multiplier) / torch.sqrt(scheudler.alpha(t))
             
             # we are going to use sigma = beta for the backward pass
-            sigma = torch.sqrt(scheudler.beta(t))  * 0
+            sigma = torch.sqrt(scheudler.beta(t))  * 1
             # x = x + torch.randn_like(x) * sigma
             x = x_prev + torch.randn_like(x) * sigma
-            # x = torch.clamp(x, -1, 1)
+            x = torch.clamp(x, -1, 1)
+            
+            
+            if t == 0:
+                x = x0
             
             if collect_latents:
                 image_grid = torchvision.utils.make_grid(x0, nrow=3) 

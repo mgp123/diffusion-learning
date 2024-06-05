@@ -1,10 +1,10 @@
 import torch
 from model import DiffusionUnet
-from noise_scheudle import LinearSchedule
+from noise_scheudle import LinearSchedule, CosineSchedule
 import torchvision
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-saved = torch.load("weights/model_0.pth")
+saved = torch.load("weights/model_9.pth")
 model_hyperparameters = saved["model_hyperparameters"]
 image_size = saved["image_size"]
 
@@ -12,7 +12,7 @@ image_size = saved["image_size"]
 model = DiffusionUnet(
     **model_hyperparameters
 )
-noise_schedule = LinearSchedule(model_hyperparameters["timesteps"], device=device)
+noise_schedule = CosineSchedule(model_hyperparameters["timesteps"], device=device)
 model.load_state_dict(saved["weights"])
 
 model.to(device)
@@ -35,15 +35,19 @@ def display_t_embeddings():
 # display_t_embeddings()
 
 
-z = torch.randn((9, 3, image_size, image_size), device=device)
+z = torch.randn((9, 3, image_size, image_size), device=device) * 0.3
 sample, images = model.sample(z, noise_schedule, collect_latents=True)
 
 images = images.cpu()
-# images = (images + 1) / 2
+images = (images + 1) / 2
 images = torch.clamp(images, 0, 1)
 images = images.permute(0, 2, 3, 1)
 images = images*255
 
+
+sample = (sample + 1) / 2
+torchvision.utils.save_image(sample, f"pepe.png", nrow=3)
+                
 # save video using torchvision
 torchvision.io.write_video("sample.mp4", images, fps=30)
 
