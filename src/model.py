@@ -63,14 +63,32 @@ class TimeBlock(nn.Module):
     def __init__(self, t_embedding, out_channels):
         super(TimeBlock, self).__init__()
         self.model = nn.Sequential(
-            nn.Linear(t_embedding, out_channels),
+            nn.Linear(t_embedding, out_channels*2),
         )
         
-    def forward(self, x):
-        x = self.model(x)
+    def forward(self, x, t):
+        mult = self.model(t)
         # to (batch, out_channels, 1, 1)
-        x = x.unsqueeze(-1).unsqueeze(-1)
+        mult = mult.unsqueeze(-1).unsqueeze(-1)
+        scale, bias = mult.chunk(2, dim=1)
+        x = nn.functional.group_norm(x, 2)
+        x = x * scale + bias
         return x
+
+class VarianceBlock(nn.Module):
+    def __init__(self, out_channels):
+        super(VarianceBlock, self).__init__()
+        # this is basically a vector, but whatever
+        self.scaler =  nn.Linear(1, out_channels)
+        self.biaser = nn.Linear(1, out_channels)
+        
+    def forward(self, x, v):
+        scale, bias = self.scaler(v), self.biaser(v)
+        scale, bias = scale.unsqueeze(-1).unsqueeze(-1), bias.unsqueeze(-1).unsqueeze(-1)
+        x = nn.functional.group_norm(x, 2)
+        x = x * scale + bias
+        return x
+
 
 class SelfAttentionBlock(nn.Module):
     def __init__(self, in_channels, in_shape, latent_size) -> None:
@@ -123,50 +141,59 @@ class EncoderBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(EncoderBlock, self).__init__()
         self.model = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, stride=2),
             nn.GroupNorm(2, out_channels),
             nn.GELU(),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, stride=2),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.GroupNorm(2, out_channels),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.GroupNorm(2, out_channels),
             nn.GELU(),
-        )
-        
-        self.skip = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=2),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.GroupNorm(2, out_channels),
         )
+
         
     def forward(self, x):
-        inv_root2 = (2**(-0.5))
-        x = inv_root2*(self.model(x) + self.skip(x) )
-        return x
+        return self.model(x)
 
 class DecoderBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(DecoderBlock, self).__init__()
         self.model = nn.Sequential(
+            nn.Upsample(scale_factor=2),
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
             nn.GroupNorm(2, out_channels),
             nn.GELU(),
-            nn.Upsample(scale_factor=2),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.GroupNorm(2, out_channels),
             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
             nn.GroupNorm(2, out_channels),
             nn.GELU(),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.GroupNorm(2, out_channels),        
         )
         
-        self.skip = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=1),
+        
+    def forward(self, x):
+        return self.model(x)
+
+class MidBlockUnit(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(MidBlockUnit, self).__init__()
+        self.model = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
             nn.GroupNorm(2, out_channels),
-            nn.Upsample(scale_factor=2),
+            nn.GELU(),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.GroupNorm(2, out_channels),
         )
         
     def forward(self, x):
-        inv_root2 = (2**(-0.5))
-        x =  inv_root2*(self.model(x) + self.skip(x) )
-        return x
+        return self.model(x)
 
 class DiffusionUnet(nn.Module):
-    def __init__(self, in_channels, blocks=5, t_embedding_size=256, timesteps=100, initial_channels=4):
+    def __init__(self, in_channels, blocks=5, t_embedding_size=256, timesteps=100, initial_channels=4, channel_multiplier=None):
         super(DiffusionUnet, self).__init__()
         
         self.preprocess = nn.Sequential(
@@ -179,46 +206,56 @@ class DiffusionUnet(nn.Module):
             nn.Conv2d(initial_channels, in_channels, kernel_size=1),
         )
         
-        self.t_embedding = SinusoidalPositionalEmbedding(timesteps, t_embedding_size)
+        # self.t_embedding = SinusoidalPositionalEmbedding(timesteps, t_embedding_size)
         self.encoder_blocks = nn.ModuleList()
         self.decoder_blocks = nn.ModuleList()
         self.time_blocks_down = nn.ModuleList()
         self.time_blocks_up = nn.ModuleList()
         
+        if channel_multiplier is None:
+            channel_multiplier = 2
+        
+        if type(channel_multiplier) == int:
+            channel_multiplier = [channel_multiplier] * blocks
+        
         
         in_channels = initial_channels
-        out_channels =  in_channels*2
+        out_channels =  in_channels * channel_multiplier[0]
         
         for i in range(blocks):
             self.encoder_blocks.append(EncoderBlock(in_channels, out_channels))
             self.decoder_blocks.append(DecoderBlock(out_channels*2, in_channels)) # times 2 because of the skip connection cat
             
             # one for the encoder and one for the decoder
-            self.time_blocks_down.append(TimeBlock(t_embedding_size, out_channels))
-            self.time_blocks_up.append(TimeBlock(t_embedding_size, in_channels))
+            self.time_blocks_down.append(VarianceBlock(out_channels))
+            self.time_blocks_up.append(VarianceBlock(in_channels))
 
             in_channels = out_channels
-            out_channels *= 2
+            out_channels *= channel_multiplier[i+1] if i+1 < len(channel_multiplier) else 1
         
         
-        self.middle_block = SelfAttentionBlock(in_channels, (16, 16), 512)
+        self.middle_block = nn.Sequential(
+            SelfAttentionBlock(in_channels, (16, 16), 128),
+            MidBlockUnit(in_channels, in_channels),
+            MidBlockUnit(in_channels, in_channels),
+            MidBlockUnit(in_channels, in_channels),
+        )
 
         
         # reverse the decoder list as it goes from low to high
         self.decoder_blocks = self.decoder_blocks[::-1]
         self.time_blocks_up = self.time_blocks_up[::-1]
         
-    def forward(self, x, t):
+    def forward(self, x, v):
         
         x = self.preprocess(x)
         
         skip_connections = []
-        t = self.t_embedding(t)
         inv_root2 = (2**(-0.5))
         
         for encoder_block, time_block in zip(self.encoder_blocks, self.time_blocks_down):
             x = encoder_block(x)
-            x = inv_root2 * (x + time_block(t))
+            x = time_block(x, v)
             skip_connections.append(x)
             
         
@@ -227,7 +264,7 @@ class DiffusionUnet(nn.Module):
         for decoder_block, time_block in zip(self.decoder_blocks, self.time_blocks_up):
             residual = skip_connections.pop()
             x = decoder_block(torch.cat([x, residual], dim=1))
-            x = inv_root2 * (x + time_block(t))
+            x = time_block(x, v)
             
         x = self.postprocess(x)
             
@@ -236,33 +273,36 @@ class DiffusionUnet(nn.Module):
     @torch.no_grad()
     def sample(self, x, scheudler, collect_latents=False):
         ts = torch.arange(0, scheudler.timesteps, device=x.device)
-        ts = torch.flip(ts, [0])
+        step_size = 2
+        ts = torch.flip(ts, [0])[:-1][::step_size]
         collected_latents = []
         for t in tqdm(ts, leave=False):
-            epsilon =  self(x, t)
-                
-            x0 = (x - epsilon * torch.sqrt(scheudler.cumul_beta(t))) / torch.sqrt(scheudler.cumul_alpha(t))
+            t_vect = t.repeat(x.shape[0])
+            v = torch.sqrt(scheudler.cumul_beta(t_vect)).unsqueeze(-1)
+            epsilon =  self(x, v)
             
-            
-            t_prev = torch.clamp(t - 1, 0, scheudler.timesteps - 1)
-            
-            coeff_x0 = torch.sqrt(scheudler.cumul_alpha(t_prev))   * scheudler.beta(t) / scheudler.cumul_beta(t_prev)
-            coeff_xt =  torch.sqrt(scheudler.alpha(t)) * scheudler.cumul_beta(t_prev) / scheudler.cumul_beta(t) 
+            x_prev = (x - epsilon * scheudler.beta(t) *  torch.sqrt(1/ scheudler.cumul_beta(t))) / torch.sqrt(scheudler.alpha(t))
+            x0 =  (x - epsilon  *  torch.sqrt(scheudler.cumul_beta(t))) / torch.sqrt(scheudler.cumul_alpha(t))
+            t_prev = torch.clamp(t - step_size, 0, scheudler.timesteps - 1)
+            beta_cum_prev = scheudler.cumul_beta(t_prev)
+            alpha_cum_prev = scheudler.cumul_alpha(t_prev)
+            alpha_cum = scheudler.cumul_alpha(t)
 
-            x_prev = coeff_x0 * x0 + coeff_xt * x
-
-            epsilon_multiplier =  scheudler.beta(t)/ torch.sqrt(scheudler.cumul_beta(t))
-            x_prev = (x - epsilon * epsilon_multiplier) / torch.sqrt(scheudler.alpha(t))
-            
             # we are going to use sigma = beta for the backward pass
-            sigma = torch.sqrt(scheudler.beta(t))  * 1
-            # x = x + torch.randn_like(x) * sigma
-            x = x_prev + torch.randn_like(x) * sigma
-            x = torch.clamp(x, -1, 1)
+            sigma = beta_cum_prev *   torch.sqrt(beta_cum_prev)
+            # sigma = 0.6 * ((t/scheudler.timesteps))**6  * beta_cum_prev
+            noise = torch.sqrt(beta_cum_prev - sigma**2) * epsilon + sigma * torch.randn_like(x) 
+            
+            # 2*torch.sqrt(1-variance_prev)
+            x0_multiplier = torch.sqrt(alpha_cum_prev)
+            x = x0 * x0_multiplier + noise
+            clip_power = 2 # 1 + torch.sqrt(beta_cum_prev)
             
             
-            if t == 0:
-                x = x0
+            x = torch.clamp(x, -clip_power, clip_power)
+
+            
+      
             
             if collect_latents:
                 image_grid = torchvision.utils.make_grid(x0, nrow=3) 

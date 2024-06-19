@@ -24,15 +24,16 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # training hyperparameters 
 lr=2e-4
 sample_every = 500
-epochs = 10
-batch_size = 64
+epochs = 40
+batch_size = 128 + 64
 
 # model hyperparameters
 model_hyperparameters= {
     "in_channels" : 3,
     "blocks" : 3,
-    "timesteps" : 100,
-    "initial_channels" : 128
+    "timesteps" : 1000,
+    "initial_channels" : 64,
+    "channel_multiplier" : 2,
     }
 timesteps = model_hyperparameters["timesteps"]
 in_channels = model_hyperparameters["in_channels"]
@@ -50,11 +51,26 @@ model = DiffusionUnet(
     ).to(device)
 
 
+if True:
+    saved = torch.load("weights/model_93.pth")
+    model_hyperparameters = saved["model_hyperparameters"]
+    image_size = saved["image_size"]
+
+    # load the model from pth
+    model = DiffusionUnet(
+        **model_hyperparameters
+    )
+    noise_schedule = CosineSchedule(model_hyperparameters["timesteps"], device=device)
+    model.load_state_dict(saved["weights"])
+    model.to(device)
+
+
+
 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
 # training loop
 steps = 0
-for epoch in range(epochs):
+for epoch in range(100,epochs+100):
     for x,_ in tqdm(dataloader):
         # optimizer stuff
         optimizer.zero_grad()
@@ -74,11 +90,13 @@ for epoch in range(epochs):
         cumul_beta = noise_schedule.cumul_beta(t).to(device).view(*target_shape) 
         
         
-        x_t = torch.sqrt(cumul_alpha) * x + torch.sqrt(cumul_beta) * epsilon
+        x_t = torch.sqrt(cumul_alpha)* x + torch.sqrt(cumul_beta) * epsilon
         
         # torchvision.utils.save_image(x_t, f"test_image_{steps}.png")
 
-        predicted_epsilon = model(x_t, t)
+        # predicted_epsilon = model(x_t, t) 
+        v = torch.sqrt(cumul_beta)[:,:,0,0]
+        predicted_epsilon = model(x_t, v )
         
         # error prediction and backprop
         loss = torch.nn.functional.mse_loss(predicted_epsilon, epsilon)
@@ -89,7 +107,7 @@ for epoch in range(epochs):
         steps += 1
         summary_writer.add_scalar('loss', loss.item(), steps)
         
-        if steps % sample_every == 0:
+        if steps % sample_every == 0 and False:
             with torch.no_grad():
                 model.eval()
                 z = torch.randn((9, in_channels, image_size, image_size), device=device)

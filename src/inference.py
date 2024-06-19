@@ -4,7 +4,7 @@ from noise_scheudle import LinearSchedule, CosineSchedule
 import torchvision
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-saved = torch.load("weights/model_9.pth")
+saved = torch.load("weights/model_124.pth")
 model_hyperparameters = saved["model_hyperparameters"]
 image_size = saved["image_size"]
 
@@ -35,7 +35,7 @@ def display_t_embeddings():
 # display_t_embeddings()
 
 
-z = torch.randn((9, 3, image_size, image_size), device=device) * 0.3
+z = torch.randn((9, 3, image_size, image_size), device=device) * 2
 sample, images = model.sample(z, noise_schedule, collect_latents=True)
 
 images = images.cpu()
