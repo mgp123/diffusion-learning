@@ -19,8 +19,8 @@ class SinusoidalPositionalEmbedding(nn.Module):
         super(SinusoidalPositionalEmbedding, self).__init__()
         freq_constant = 10000
         
-        t_matrix = torch.arange(timesteps).float().repeat(embedding_dim, 1).T
-        p_matrix = torch.arange(embedding_dim).float().repeat(timesteps, 1)
+        t_matrix = torch.arange(timesteps).half().repeat(embedding_dim, 1).T
+        p_matrix = torch.arange(embedding_dim).half().repeat(timesteps, 1)
         w = t_matrix / freq_constant**(2*p_matrix/embedding_dim)
         
         w = w.T
@@ -273,7 +273,7 @@ class DiffusionUnet(nn.Module):
     @torch.no_grad()
     def sample(self, x, scheudler, collect_latents=False):
         ts = torch.arange(0, scheudler.timesteps, device=x.device)
-        step_size = 2
+        step_size = 5
         ts = torch.flip(ts, [0])[:-1][::step_size]
         collected_latents = []
         for t in tqdm(ts, leave=False):
@@ -287,25 +287,26 @@ class DiffusionUnet(nn.Module):
             beta_cum_prev = scheudler.cumul_beta(t_prev)
             alpha_cum_prev = scheudler.cumul_alpha(t_prev)
             alpha_cum = scheudler.cumul_alpha(t)
+            
+            x0 = torch.clamp(x0, -1, 1)
 
             # we are going to use sigma = beta for the backward pass
-            sigma = beta_cum_prev *   torch.sqrt(beta_cum_prev)
-            # sigma = 0.6 * ((t/scheudler.timesteps))**6  * beta_cum_prev
+            sigma =   torch.sqrt(beta_cum_prev * 0.5) 
             noise = torch.sqrt(beta_cum_prev - sigma**2) * epsilon + sigma * torch.randn_like(x) 
             
-            # 2*torch.sqrt(1-variance_prev)
             x0_multiplier = torch.sqrt(alpha_cum_prev)
-            x = x0 * x0_multiplier + noise
+            noise_multiplier = 1
+            x = x0 * x0_multiplier + noise * noise_multiplier
             clip_power = 2 # 1 + torch.sqrt(beta_cum_prev)
             
             
-            x = torch.clamp(x, -clip_power, clip_power)
+            # x = torch.clamp(x, -clip_power, clip_power)
 
             
       
             
             if collect_latents:
-                image_grid = torchvision.utils.make_grid(x0, nrow=3) 
+                image_grid = torchvision.utils.make_grid(x0, nrow=torch.sqrt(torch.tensor(x0.shape[0])).int()) 
                 collected_latents.append(image_grid)
         
         if collect_latents:

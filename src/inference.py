@@ -4,7 +4,7 @@ from noise_scheudle import LinearSchedule, CosineSchedule
 import torchvision
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-saved = torch.load("weights/model_124.pth")
+saved = torch.load("weights/model_313.pth")
 model_hyperparameters = saved["model_hyperparameters"]
 image_size = saved["image_size"]
 
@@ -35,8 +35,11 @@ def display_t_embeddings():
 # display_t_embeddings()
 
 
-z = torch.randn((9, 3, image_size, image_size), device=device) * 2
-sample, images = model.sample(z, noise_schedule, collect_latents=True)
+z = torch.randn((8**2, 3, image_size, image_size), device=device) * 1
+z = z.half()
+with torch.autocast(device_type="cuda"):
+
+    sample, images = model.sample(z, noise_schedule, collect_latents=True)
 
 images = images.cpu()
 images = (images + 1) / 2
@@ -46,7 +49,12 @@ images = images*255
 
 
 sample = (sample + 1) / 2
-torchvision.utils.save_image(sample, f"pepe.png", nrow=3)
+torchvision.utils.save_image(
+    sample, 
+    f"pepe.png", 
+    nrow=torch.sqrt(torch.tensor(sample.shape[0])).int(),
+    padding=0
+    )
                 
 # save video using torchvision
 torchvision.io.write_video("sample.mp4", images, fps=30)

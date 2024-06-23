@@ -193,6 +193,11 @@ $$ \hat{\alpha_t}^2  + (1-\hat{\alpha_t})^2 = 2 \hat{\alpha_t} (\hat{\alpha_t}-1
 
 Which would vary as you advance in the markov chain. It would have less variance between the extremes. How exactly? It depends on the specific schedule we use. 
 
+## Generating faces 
+![sample](img/samples.png)
+
+
+
 ## References
 - Denoising Diffusion Probabilistic Models. *Jonathan Ho, Ajay Jain, Pieter Abbeel*. [Paper](https://arxiv.org/abs/2006.11239)
 - https://lilianweng.github.io/posts/2021-07-11-diffusion-models/ 
