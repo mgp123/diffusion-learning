@@ -118,7 +118,7 @@ $$\log p_\theta(x_{0}) \geq E_{X_{1:T}|x_0} \left[\log \frac{p_\theta(x_0, X_{1:
 
 We can expand both the true markov chain and our parametrized one using the (backward) markov property
 
-- $p_\theta(x_0, X_{1:T}) = p_\theta(x_0|X_1) ( \prod^{T-1}_{t=1} p_\theta(X_t|X_{t+1}) ) p_\theta(X_T)$
+- $p_\theta(x_0, X_{1:T}) = p_\theta(x_0|X_1) ( \prod_{t=1 to T-1} p_\theta(X_t|X_{t+1}) ) p_\theta(X_T)$
 
 - $p(X_{1:T}|x_0)=  ( \prod^{T-1}_{t=1} p(X_t|X_{t+1}, x_0) ) p(X_T|x_0)$
 
