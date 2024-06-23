@@ -63,9 +63,9 @@ This property might be easier to grasp with a simple example. Take the markov ch
 
 $$A_1  \rightarrow A_2 \rightarrow A_3 \rightarrow A_4$$
 
-With dyanmics given by
+With dynamics given by
 - $A_1 \sim N(0,I) $
-- $ A_2 = A_1$
+- $A_2 = A_1$
 - $A_3|A_2 \sim N(0,I)$
 - $A_4 = A_3$
 
@@ -118,9 +118,9 @@ $$\log p_\theta(x_{0}) \geq E_{{X}_{1:T}|x_0} \left[\log \frac{p_\theta(x_0, {X}
 
 We can expand both the true markov chain and our parametrized one using the (backward) markov property
 
-- $$ p_\theta(x_0, {X}_{1:T})= p_\theta(x_{0}|{X_{1}}) \left( \prod_{t=1}^{T-1} p_\theta(X_{t}|{X_{t+1}}) \right) p_\theta(X_T)  $$
+- $$p_\theta(x_0, {X}_{1:T})= p_\theta(x_{0}|{X_{1}}) \left( \prod_{t=1}^{T-1} p_\theta(X_{t}|{X_{t+1}}) \right) p_\theta(X_T)$$
 
-- $$ p({X}_{1:T}|x_0)=  \left( \prod_{t=1}^{T-1} p(X_{t}|{X_{t+1}}, x_0) \right) p(X_T|x_0) $$
+- $$p({X}_{1:T}|x_0)=  \left( \prod_{t=1}^{T-1} p(X_{t}|{X_{t+1}}, x_0) \right) p(X_T|x_0)$$
 
 
 Note that the products start at $t=1$ because $x_0$ is not a random variable. It's fixed, so we handle it slightly different
@@ -135,7 +135,7 @@ $$= E_{ {X}_{1:T}|x_0} \left[ \left( \sum^{T-1}_{t=1} \log \frac{p_\theta(X_{t}|
 
 Note that, we always have that $X_T \sim N(0,I)$, it does not depend on $\theta$ nor on $x_0$. So the second term is 0. The first term is also a sum of KL divergences
 
-$$ =   \left( \sum^{T-1}_{t=1} -KL\left(p(X_t|X_{t+1},x_0) \mid \mid p_\theta(X_t|X_{t+1})\right)  \right)   + E_{ {X}_{1}|x_0} \left[ \log p_\theta(x_0|X_1)  \right] $$
+$$=   \left( \sum^{T-1}_{t=1} -KL\left(p(X_t|X_{t+1},x_0) \mid \mid p_\theta(X_t|X_{t+1})\right)  \right)   + E_{ {X}_{1}|x_0} \left[ \log p_\theta(x_0|X_1)  \right]$$
 
 
 ## Is the model actually learning the backward dynamics?
@@ -147,14 +147,14 @@ $$L =  E_{{X}_{0:T}} \left[\log \frac{p_\theta({X}_{0:T})}{p({X}_{1:T}|X_0)} \ri
 
 Let's redo the development of the last section but using 
 
-- $$ p({X}_{1:T}|X_0)=  \frac{p({X}_{0:T})} { p(X_0)} =  \prod^{T-1}_{t=0} p({X}_{t}|X_{t+1}) \frac{p(X_T)} { p(X_0)} $$
+- $$p({X}_{1:T}|X_0)=  \frac{p({X}_{0:T})} { p(X_0)} =  \prod^{T-1}_{t=0} p({X}_{t}|X_{t+1}) \frac{p(X_T)} { p(X_0)}$$
 
 
 Which leads to 
 
 $$L = E_{ {X}_{0:T}} \left[ \left( \sum^{T-1}_{t=0} \log \frac{p_\theta(X_{t}|{X_{t+1}})} {p(X_{t}|{X_{t+1}})} \right) + \log \frac { p_\theta(X_T)} { p(X_T)} - \log p(X_0)  \right]$$
 
-$$ =   \left( \sum^{T-1}_{t=0} -KL\left(p(X_t|X_{t+1}) \mid \mid p_\theta(X_t|X_{t+1})\right)  \right) + 0 + H(X_0) $$
+$$=   \left( \sum^{T-1}_{t=0} -KL\left(p(X_t|X_{t+1}) \mid \mid p_\theta(X_t|X_{t+1})\right)  \right) + 0 + H(X_0)$$
 
 **So we are truly learning the markov model backward dynamics!**
 
