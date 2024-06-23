@@ -118,9 +118,9 @@ $$\log p_\theta(x_{0}) \geq E_{X_{1:T}|x_0} \left[\log \frac{p_\theta(x_0, X_{1:
 
 We can expand both the true markov chain and our parametrized one using the (backward) markov property
 
-- $p_\theta(x_0, X_{1:T})= p_\theta(x_{0}|X_{1}) \left( \prod_{t=1}^{T-1} p_\theta(X_{t}|X_{t+1}) \right) p_\theta(X_T)$
+- $p_\theta(x_0, X_{1:T})= p_\theta(x_{0}|X_{1}) \left( \prod^{T-1}_{t=1} p_\theta(X_{t}|X_{t+1}) \right) p_\theta(X_T)$
 
-- $p(X_{1:T}|x_0)=  \left( \prod_{t=1}^{T-1} p(X_t|X_{t+1}, x_0) \right) p(X_T|x_0)$
+- $p(X_{1:T}|x_0)=  \left( \prod^{T-1}_{t=1} p(X_t|X_{t+1}, x_0) \right) p(X_T|x_0)$
 
 
 Note that the products start at $t=1$ because $x_0$ is not a random variable. It's fixed, so we handle it slightly different
@@ -152,7 +152,7 @@ Let's redo the development of the last section but using
 
 Which leads to 
 
-$$L = E_{ {X}_{0:T}} \left[ \left( \sum^{T-1}_{t=0} \log \frac{p_\theta(X_{t}|{X_{t+1}})} {p(X_{t}|{X_{t+1}})} \right) + \log \frac { p_\theta(X_T)} { p(X_T)} - \log p(X_0)  \right]$$
+$$L = E_{ X_{0:T}} \left[ \left( \sum^{T-1}_{t=0} \log \frac{p_\theta(X_t|X_{t+1})}{p(X_{t}|X_{t+1})} \right) + \log \frac { p_\theta(X_T)} { p(X_T)} - \log p(X_0)  \right]$$
 
 $$=   \left( \sum^{T-1}_{t=0} -KL\left(p(X_t|X_{t+1}) \mid \mid p_\theta(X_t|X_{t+1})\right)  \right) + 0 + H(X_0)$$
 
