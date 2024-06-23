@@ -196,8 +196,14 @@ $$ \hat{\alpha_t}^2  + (1-\hat{\alpha_t})^2 = 2 \hat{\alpha_t} (\hat{\alpha_t}-1
 Which would vary as you advance in the markov chain. It would have less variance between the extremes. How exactly? It depends on the specific schedule we use. 
 
 ## Generating faces 
+Samples generated with **our trained model**. They are OK!
+
 ![sample](img/samples.png)
 
+Here is a video of a diffusion process
+
+
+https://github.com/mgp123/diffusion-learning/assets/43388395/c89d1e78-22e7-44b6-9f70-4520916a47e6
 
 
 ## References
