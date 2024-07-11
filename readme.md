@@ -206,6 +206,11 @@ Here is a video of a diffusion process
 https://github.com/mgp123/diffusion-learning/assets/43388395/c89d1e78-22e7-44b6-9f70-4520916a47e6
 
 
+## Conditioning example. Super resolution
+
+You can also do conditional generation. For simple image conditional generation you can simply add some extra info somewhere in the neural network. In this example, we add 3 extra channels to the input with some low-resolution version of the denoised image.
+
+
 ## References
 - Denoising Diffusion Probabilistic Models. *Jonathan Ho, Ajay Jain, Pieter Abbeel*. [Paper](https://arxiv.org/abs/2006.11239)
 - https://lilianweng.github.io/posts/2021-07-11-diffusion-models/ 
