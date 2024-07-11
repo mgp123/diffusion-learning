@@ -274,9 +274,8 @@ class DiffusionUnet(nn.Module):
         return x
     
     @torch.no_grad()
-    def sample(self, x, scheudler, collect_latents=False, beta_mult=0.6, conditioning=None):
+    def sample(self, x, scheudler, collect_latents=False, beta_mult=0.6,step_size=5, conditioning=None):
         ts = torch.arange(0, scheudler.timesteps, device=x.device)
-        step_size = 5
         ts = torch.flip(ts, [0])[:-1][::step_size]
         collected_latents = []
         for t in tqdm(ts, leave=False):
