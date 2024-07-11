@@ -209,6 +209,11 @@ https://github.com/mgp123/diffusion-learning/assets/43388395/c89d1e78-22e7-44b6-
 ## Conditioning example. Super resolution
 
 You can also do conditional generation. For simple image conditional generation you can simply add some extra info somewhere in the neural network. In this example, we add 3 extra channels to the input with some low-resolution version of the denoised image.
+This trick is also a good idea when you want trainning at high resolution in not feasible due to compute limietations. We can train a large model for a lower resolution and then a smaller model for a higher resolution (64x64 and 128x128 respectively this case)
+
+Below our current trained example (its pretty bad right now)
+
+![pepe3](https://github.com/user-attachments/assets/9203e541-62b3-48da-808e-7cdbef80796c)
 
 
 ## Training the models yourself
