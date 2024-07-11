@@ -213,14 +213,13 @@ You can also do conditional generation. For simple image conditional generation 
 
 ## Training the models yourself
 
+**Run the script** with the command `python src/train.py`.
+
 The script is structured to initialize the model with specified hyperparameters. You can define your model's hyperparameters in the `model_hyperparameters` dictionary. This includes settings such as the number of blocks, channels, and timesteps for the diffusion process.
 
 The model consists of a simple U-Net with residual connections. Contrary to popular implementations, we feed the variance of the diffusion step directly to the model instead of the timestep itself.
 
 *Optional Model Loading*. If you wish to continue training from a pre-trained model, set the conditional statement to `True` and specify the path to your `.pth` file containing the model weights and hyperparameters.
-
-*Run the script* with the command `python src/train.py`.
-Additionally, `train.py` incorporates features for monitoring and evaluating the training process:
 
 *TensorBoard logging* losses. This allows for real-time monitoring of the model's performance. To view these logs, run `tensorboard --logdir=runs` from your terminal.
 
