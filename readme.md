@@ -211,6 +211,23 @@ https://github.com/mgp123/diffusion-learning/assets/43388395/c89d1e78-22e7-44b6-
 You can also do conditional generation. For simple image conditional generation you can simply add some extra info somewhere in the neural network. In this example, we add 3 extra channels to the input with some low-resolution version of the denoised image.
 
 
+## Training the models yourself
+
+The script is structured to initialize the model with specified hyperparameters. You can define your model's hyperparameters in the `model_hyperparameters` dictionary. This includes settings such as the number of blocks, channels, and timesteps for the diffusion process.
+
+The model consists of a simple U-Net with residual connections. Contrary to popular implementations, we feed the variance of the diffusion step directly to the model instead of the timestep itself.
+
+*Optional Model Loading*. If you wish to continue training from a pre-trained model, set the conditional statement to `True` and specify the path to your `.pth` file containing the model weights and hyperparameters.
+
+*Run the script* with the command `python src/train.py`.
+Additionally, `train.py` incorporates features for monitoring and evaluating the training process:
+
+*TensorBoard logging* losses. This allows for real-time monitoring of the model's performance. To view these logs, run `tensorboard --logdir=runs` from your terminal.
+
+*Image Saving* at specified intervals, the script saves generated images to a designated directory. Ensure to set the `sample_every` variable to control how frequently images are saved during training.
+
+
+
 ## References
 - Denoising Diffusion Probabilistic Models. *Jonathan Ho, Ajay Jain, Pieter Abbeel*. [Paper](https://arxiv.org/abs/2006.11239)
 - https://lilianweng.github.io/posts/2021-07-11-diffusion-models/ 
