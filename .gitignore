@@ -4,3 +4,6 @@ __pycache__
 runs
 weights
 generations
+reference_images
+local
+img/generations*

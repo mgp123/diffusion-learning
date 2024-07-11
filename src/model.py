@@ -193,7 +193,7 @@ class MidBlockUnit(nn.Module):
         return self.model(x)
 
 class DiffusionUnet(nn.Module):
-    def __init__(self, in_channels, blocks=5, t_embedding_size=256, timesteps=100, initial_channels=4, channel_multiplier=None):
+    def __init__(self, in_channels, blocks=5, t_embedding_size=256, timesteps=100, initial_channels=4, channel_multiplier=None, out_channels=None, attention_mid_size=(16,16),  ):
         super(DiffusionUnet, self).__init__()
         
         self.preprocess = nn.Sequential(
@@ -202,8 +202,11 @@ class DiffusionUnet(nn.Module):
             nn.GELU()
         )
         
+        if out_channels is None:
+            out_channels = in_channels
+            
         self.postprocess = nn.Sequential(
-            nn.Conv2d(initial_channels, in_channels, kernel_size=1),
+            nn.Conv2d(initial_channels, out_channels, kernel_size=1),
         )
         
         # self.t_embedding = SinusoidalPositionalEmbedding(timesteps, t_embedding_size)
@@ -235,7 +238,7 @@ class DiffusionUnet(nn.Module):
         
         
         self.middle_block = nn.Sequential(
-            SelfAttentionBlock(in_channels, (16, 16), 128),
+            SelfAttentionBlock(in_channels, attention_mid_size, 128),
             MidBlockUnit(in_channels, in_channels),
             MidBlockUnit(in_channels, in_channels),
             MidBlockUnit(in_channels, in_channels),
@@ -271,7 +274,7 @@ class DiffusionUnet(nn.Module):
         return x
     
     @torch.no_grad()
-    def sample(self, x, scheudler, collect_latents=False):
+    def sample(self, x, scheudler, collect_latents=False, beta_mult=0.6, conditioning=None):
         ts = torch.arange(0, scheudler.timesteps, device=x.device)
         step_size = 5
         ts = torch.flip(ts, [0])[:-1][::step_size]
@@ -279,19 +282,24 @@ class DiffusionUnet(nn.Module):
         for t in tqdm(ts, leave=False):
             t_vect = t.repeat(x.shape[0])
             v = torch.sqrt(scheudler.cumul_beta(t_vect)).unsqueeze(-1)
-            epsilon =  self(x, v)
+            
+            if conditioning is None:
+                epsilon =  self(x, v)
+            else:
+                epsilon =  self(torch.cat([x,conditioning], dim=1), v)
             
             x_prev = (x - epsilon * scheudler.beta(t) *  torch.sqrt(1/ scheudler.cumul_beta(t))) / torch.sqrt(scheudler.alpha(t))
             x0 =  (x - epsilon  *  torch.sqrt(scheudler.cumul_beta(t))) / torch.sqrt(scheudler.cumul_alpha(t))
             t_prev = torch.clamp(t - step_size, 0, scheudler.timesteps - 1)
             beta_cum_prev = scheudler.cumul_beta(t_prev)
+            beta_cum = scheudler.cumul_beta(t)
             alpha_cum_prev = scheudler.cumul_alpha(t_prev)
             alpha_cum = scheudler.cumul_alpha(t)
             
             x0 = torch.clamp(x0, -1, 1)
 
             # we are going to use sigma = beta for the backward pass
-            sigma =   torch.sqrt(beta_cum_prev * 0.5) 
+            sigma =   torch.sqrt(beta_cum_prev  * beta_mult) 
             noise = torch.sqrt(beta_cum_prev - sigma**2) * epsilon + sigma * torch.randn_like(x) 
             
             x0_multiplier = torch.sqrt(alpha_cum_prev)
@@ -302,9 +310,6 @@ class DiffusionUnet(nn.Module):
             
             # x = torch.clamp(x, -clip_power, clip_power)
 
-            
-      
-            
             if collect_latents:
                 image_grid = torchvision.utils.make_grid(x0, nrow=torch.sqrt(torch.tensor(x0.shape[0])).int()) 
                 collected_latents.append(image_grid)
