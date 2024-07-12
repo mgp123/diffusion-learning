@@ -213,7 +213,10 @@ This trick is also a good idea when you want training at high resolution is not 
 
 Below our current trained example (its pretty bad right now)
 
-![pepe3](https://github.com/user-attachments/assets/9203e541-62b3-48da-808e-7cdbef80796c)
+
+![pepe3](https://github.com/user-attachments/assets/c6b5d6c6-1bac-4497-a02d-599abdf20511)
+
+
 
 
 ## Training the models yourself
