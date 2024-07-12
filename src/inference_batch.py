@@ -19,7 +19,6 @@ model.load_state_dict(saved["weights"])
 
 model.to(device)
 model.eval()
-model = model.half()
 
 collect_latents = False
 

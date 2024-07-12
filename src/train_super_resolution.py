@@ -33,11 +33,11 @@ iters_to_accumulate = 4
 model_hyperparameters= {
     "in_channels" : 3*2,
     "out_channels": 3,
-    "blocks" : 2,
+    "blocks" : 3,
     "timesteps" : 1000,
-    "initial_channels" : 128,
+    "initial_channels" : 64,
     "channel_multiplier" : 2,
-    "attention_mid_size": (32,32)
+    "attention_mid_size": (16,16)
     }
 timesteps = model_hyperparameters["timesteps"]
 in_channels = model_hyperparameters["in_channels"]
@@ -55,7 +55,7 @@ model = DiffusionUnet(
     **model_hyperparameters
     ).to(device)
 
-if True:
+if False:
     saved = torch.load("weights_super_resolution/model_0.pth")
     model.load_state_dict(saved["weights"])
     model.to(device)
