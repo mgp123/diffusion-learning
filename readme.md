@@ -214,7 +214,7 @@ This trick is also a good idea when you want training at high resolution is not 
 Below our current trained example (its pretty bad right now)
 
 
-![pepe3](https://github.com/user-attachments/assets/f4f453ad-f816-4588-8336-4508b81df1bc)
+![pepe3](https://github.com/user-attachments/assets/c6b5d6c6-1bac-4497-a02d-599abdf20511)
 
 
 
