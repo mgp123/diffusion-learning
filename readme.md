@@ -212,8 +212,9 @@ You can also do conditional generation. For simple image conditional generation 
 This trick is also a good idea when you want training at high resolution is not feasible due to compute limitations. We can train a large model for a lower resolution and then a smaller model for a higher resolution (64x64 and 128x128 respectively this case)
 
 Below our current trained example (its pretty bad right now)
+![pepe3](https://github.com/user-attachments/assets/f4f453ad-f816-4588-8336-4508b81df1bc)
 
-![pepe3](https://github.com/user-attachments/assets/4f8c7bbd-38d7-4bad-b142-3f918c3e864b)
+
 
 
 ## Training the models yourself
