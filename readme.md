@@ -1,6 +1,10 @@
 # Diffusion models 
-A short review of diffusion models based on my understandings
-Diffusion models are generative models, ie they try to imitate a distribution
+
+
+![thumbnail](img/thumbnail.png)
+
+
+A short review of diffusion models based on my understanding Diffusion models are generative models, ie they try to imitate a distribution
 
 ## The diffsuion markov chain
 
