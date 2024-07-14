@@ -214,6 +214,7 @@ class DiffusionUnet(nn.Module):
         channel_multiplier=None,
         out_channels=None,
         attention_mid_size=(16, 16),
+        mid_blocks=3
     ):
         super(DiffusionUnet, self).__init__()
 
@@ -262,9 +263,7 @@ class DiffusionUnet(nn.Module):
 
         self.middle_block = nn.Sequential(
             SelfAttentionBlock(in_channels, attention_mid_size, 128),
-            MidBlockUnit(in_channels, in_channels),
-            MidBlockUnit(in_channels, in_channels),
-            MidBlockUnit(in_channels, in_channels),
+            *[MidBlockUnit(in_channels, in_channels) for _ in range(mid_blocks)]
         )
 
         # reverse the decoder list as it goes from low to high
@@ -276,7 +275,6 @@ class DiffusionUnet(nn.Module):
         x = self.preprocess(x)
 
         skip_connections = []
-        inv_root2 = 2 ** (-0.5)
 
         for encoder_block, time_block in zip(
             self.encoder_blocks, self.time_blocks_down
@@ -336,7 +334,7 @@ class DiffusionUnet(nn.Module):
             x0 = torch.clamp(x0, -1, 1)
 
             if conditioning is not None:
-                x0 = x0 * 0.9 + conditioning * 0.1
+                x0 = x0 * 0.95 + conditioning * 0.05
 
             # we are going to use sigma = beta for the backward pass
             sigma = torch.sqrt(beta_cum_prev * beta_mult)
