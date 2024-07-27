@@ -8,3 +8,4 @@ reference_images
 local
 img/generations*
 deploy-key*
+*.pth
