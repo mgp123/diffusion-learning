@@ -5,7 +5,8 @@ from torch.utils import tensorboard
 
 from tqdm import tqdm
 from model import DiffusionUnet
-from noise_scheudle import CosineSchedule, LinearSchedule
+from noise_scheudle import CosineSchedule
+import sys
 
 image_size =  64
 dataset = torchvision.datasets.ImageFolder(
@@ -22,11 +23,13 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 # training hyperparameters 
-lr=2e-4
+lr=4e-5
 sample_every = 500
 epochs = 40
-batch_size = 0 + 64
-iters_to_accumulate = 4
+batch_size = 86*2
+iters_to_accumulate = 2
+steps = 0
+initial_epoch = 0
 
 # model hyperparameters
 model_hyperparameters= {
@@ -41,19 +44,17 @@ in_channels = model_hyperparameters["in_channels"]
 
 
 summary_writer = tensorboard.SummaryWriter()
-dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
+dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, drop_last=True)
 scaler = torch.cuda.amp.GradScaler()
 
 
-# model and optimizer
+# model and scheudler and optimizer
 noise_schedule = CosineSchedule(timesteps, device=device)
-model = DiffusionUnet(
-    **model_hyperparameters
-    ).to(device)
+resume_from = len(sys.argv) > 1 and sys.argv[1] == "resume"
+resume_path = None if not resume_from else sys.argv[2]
 
-
-if False:
-    saved = torch.load("weights/model_214.pth")
+if resume_from:
+    saved = torch.load(resume_path)
     model_hyperparameters = saved["model_hyperparameters"]
     image_size = saved["image_size"]
 
@@ -63,13 +64,20 @@ if False:
     )
     noise_schedule = CosineSchedule(model_hyperparameters["timesteps"], device=device)
     model.load_state_dict(saved["weights"])
-    model.to(device)
+    steps = saved.get("steps", 0)
+    initial_epoch = saved.get("epochs", -1) + 1
+    del saved
+else:
+    model = DiffusionUnet(
+        **model_hyperparameters
+    )
+    
+model.to(device)
 
-
+    
 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 # training loop
-steps = 0
-for epoch in range(300,epochs+300):
+for epoch in range(initial_epoch,epochs):
     for x,_ in tqdm(dataloader):
         # optimizer stuff
         x = x.to(device)
@@ -96,9 +104,10 @@ for epoch in range(300,epochs+300):
             predicted_epsilon = model(x_t, v )
             
             # error prediction and backprop
-            loss = torch.nn.functional.mse_loss(predicted_epsilon, epsilon)
+            loss = torch.nn.functional.mse_loss(predicted_epsilon, epsilon) / iters_to_accumulate
             
         scaler.scale(loss).backward()
+        
         steps += 1
         if (steps) % iters_to_accumulate == 0:
             scaler.step(optimizer)
@@ -122,14 +131,21 @@ for epoch in range(300,epochs+300):
                 torchvision.utils.save_image(sample, f"img/generations/sample_{steps}.png", nrow=3)
                 model.train()
     
+    # id using hash of model hyperparameters as a unique identifier
+    identifier = hash(str(model_hyperparameters))
+    
     # save the model
     torch.save(
         {
             "weights":model.state_dict(),
             "model_hyperparameters":model_hyperparameters,
             "image_size":image_size,
+            "steps":steps,
+            "epochs":epoch,
+            "batch_size":batch_size,
+            "lr":lr
         },
-        f"weights/model_{epoch}.pth")    
+        f"weights/model_{identifier}_epoch_{epoch}.pth")    
     
 summary_writer.flush()
     

@@ -6,7 +6,7 @@ import torchvision
 import os
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-saved = torch.load("weights/model_313.pth")
+saved = torch.load("weights/model_6.pth")
 model_hyperparameters = saved["model_hyperparameters"]
 image_size = saved["image_size"]
 
@@ -19,6 +19,7 @@ model.load_state_dict(saved["weights"])
 
 model.to(device)
 model.eval()
+del saved
 
 collect_latents = False
 
@@ -26,8 +27,8 @@ collect_latents = False
 n_total = 1000
 iteration_size = 20**2
 
-for beta_mult in tqdm([x / 10.0 + 0.05 for x in range(0, 11)]):
-    output_dir = f"generations/beta_{beta_mult}"
+for beta_mult in tqdm([0.25]):
+    output_dir = f"temp/beta_{beta_mult}"
     print(output_dir)
     os.makedirs(output_dir,exist_ok=True)
 

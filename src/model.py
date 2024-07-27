@@ -21,8 +21,8 @@ class SinusoidalPositionalEmbedding(nn.Module):
         super(SinusoidalPositionalEmbedding, self).__init__()
         freq_constant = 10000
 
-        t_matrix = torch.arange(timesteps).half().repeat(embedding_dim, 1).T
-        p_matrix = torch.arange(embedding_dim).half().repeat(timesteps, 1)
+        t_matrix = torch.arange(timesteps).repeat(embedding_dim, 1).T
+        p_matrix = torch.arange(embedding_dim).repeat(timesteps, 1)
         w = t_matrix / freq_constant ** (2 * p_matrix / embedding_dim)
 
         w = w.T
@@ -271,7 +271,6 @@ class DiffusionUnet(nn.Module):
         self.time_blocks_up = self.time_blocks_up[::-1]
 
     def forward(self, x, v):
-
         x = self.preprocess(x)
 
         skip_connections = []
@@ -304,6 +303,7 @@ class DiffusionUnet(nn.Module):
         step_size=5,
         conditioning=None,
     ):
+
         ts = torch.arange(0, scheudler.timesteps, device=x.device)
         ts = torch.flip(ts, [0])[:-1][::step_size]
         collected_latents = []
@@ -342,7 +342,6 @@ class DiffusionUnet(nn.Module):
                 beta_cum_prev - sigma**2
             ) * epsilon + sigma * torch.randn_like(x)
             
-            noise = noise.half()
 
             x0_multiplier = torch.sqrt(alpha_cum_prev)
             noise_multiplier = 1

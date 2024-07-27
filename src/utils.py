@@ -10,7 +10,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 def generate_and_upscale(n):
-    saved = torch.load("pretrained_models/generation_model.pth")
+    saved = torch.load("pretrained_models/model_6.pth")
     model_hyperparameters = saved["model_hyperparameters"]
     image_size = saved["image_size"]
     
@@ -23,25 +23,24 @@ def generate_and_upscale(n):
     model.to(device)
     model.eval()
     
+    torch.manual_seed(2024)
     
     z = torch.randn((n, 3, image_size, image_size), device=device)
-    z = z.half()
     with torch.autocast(device_type="cuda"):
-        sample_low = model.sample(z, noise_schedule, beta_mult=0.55)
+        sample_low = model.sample(z, noise_schedule, beta_mult=0.34)
         
     del model
     del saved
 
     torch.cuda.empty_cache()
     
-    saved = torch.load("weights_super_resolution/model_3.pth")
+    saved = torch.load("pretrained_models/super.pth")
     model_hyperparameters = saved["model_hyperparameters"]
     image_size = saved["image_size"]
     
     low_resolution_transform = transforms.Resize(image_size)
     sample = low_resolution_transform(sample_low)
     z = torch.randn((n, 3, image_size, image_size), device=device)
-    z = z.half()
 
     noise_schedule = CosineSchedule(model_hyperparameters["timesteps"], device=device)
     model = DiffusionUnet(
@@ -50,18 +49,13 @@ def generate_and_upscale(n):
     model.load_state_dict(saved["weights"])
     model.to(device)
     model.eval()
+    del saved
 
 
     with torch.autocast(device_type="cuda"):
-        sample_high, images = model.sample(z, noise_schedule, conditioning=sample,beta_mult=0.3, step_size=10,collect_latents=True)
+        sample_high = model.sample(z, noise_schedule, conditioning=sample,beta_mult=0.8, step_size=5,collect_latents=False)
         
-    
-    images = images.cpu()
-    images = (images + 1) / 2
-    images = torch.clamp(images, 0, 1)
-    images = images.permute(0, 2, 3, 1)
-    images = images*255
-    torchvision.io.write_video("sample.mp4", images, fps=30)
+    #torchvision.io.write_video("sample.mp4", images, fps=30)
 
     # interleave sample_high and sample
     out = [sample[i//2] if i%2==0 else sample_high[i//2] for i in range(len(sample)*2)]
@@ -74,6 +68,14 @@ def generate_and_upscale(n):
         nrow=torch.sqrt(torch.tensor(out.shape[0])).int(),
         padding=0
         )
+    sample_high = (sample_high + 1) / 2
+    torchvision.utils.save_image(
+            sample_high, 
+            f"pepe3_high.png", 
+            nrow=torch.sqrt(torch.tensor(out.shape[0])).int(),
+            padding=0
+            )
+    
+    return sample_high
 
-
-generate_and_upscale(18)
+generate_and_upscale(80)
