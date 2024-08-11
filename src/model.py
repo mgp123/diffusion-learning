@@ -2,7 +2,7 @@ from torch import nn
 import torch
 import torchvision
 from tqdm import tqdm
-from noise_scheudle import LinearSchedule
+from noise_scheudle import CosineSchedule, LinearSchedule
 
 
 class PositionalEmbedding(nn.Module):
@@ -270,24 +270,42 @@ class DiffusionUnet(nn.Module):
         self.decoder_blocks = self.decoder_blocks[::-1]
         self.time_blocks_up = self.time_blocks_up[::-1]
 
-    def forward(self, x, v):
+    def forward(self, x, v, zeroing_modules=None):
         x = self.preprocess(x)
+        
+        if zeroing_modules is None:
+            zeroing_modules = {}
 
         skip_connections = []
+        
+        i = 0
 
         for encoder_block, time_block in zip(
             self.encoder_blocks, self.time_blocks_down
         ):
             x = encoder_block(x)
-            x = time_block(x, v)
+            x = time_block(x, v)            
             skip_connections.append(x)
+            if f"encoder_{i}" in zeroing_modules:
+                x = torch.zeros_like(x)
+            i+=1
 
         x = self.middle_block(x) + x
 
+        i = 0
         for decoder_block, time_block in zip(self.decoder_blocks, self.time_blocks_up):
             residual = skip_connections.pop()
+            
+            if f"residual_{i}" in zeroing_modules:
+                residual = torch.zeros_like(residual)
+            
             x = decoder_block(torch.cat([x, residual], dim=1))
             x = time_block(x, v)
+            
+            if f"decoder_{i}" in zeroing_modules:
+                x = torch.zeros_like(x)
+            
+            i+=1
 
         x = self.postprocess(x)
 
@@ -302,6 +320,8 @@ class DiffusionUnet(nn.Module):
         beta_mult=0.6,
         step_size=5,
         conditioning=None,
+        zeroing_modules=None,
+        **kwargs
     ):
 
         ts = torch.arange(0, scheudler.timesteps, device=x.device)
@@ -312,9 +332,9 @@ class DiffusionUnet(nn.Module):
             v = torch.sqrt(scheudler.cumul_beta(t_vect)).unsqueeze(-1)
 
             if conditioning is None:
-                epsilon = self(x, v)
+                epsilon = self(x, v, zeroing_modules=zeroing_modules)
             else:
-                epsilon = self(torch.cat([x, conditioning], dim=1), v)
+                epsilon = self(torch.cat([x, conditioning], dim=1), v, zeroing_modules=zeroing_modules)
 
             x_prev = (
                 x
@@ -334,7 +354,8 @@ class DiffusionUnet(nn.Module):
             x0 = torch.clamp(x0, -1, 1)
 
             if conditioning is not None:
-                x0 = x0 * 0.95 + conditioning * 0.05
+                conditioning_strength = kwargs.get("conditioning_strength", 0.95)
+                x0 = x0 * conditioning_strength + conditioning * (1-conditioning_strength)
 
             # we are going to use sigma = beta for the backward pass
             sigma = torch.sqrt(beta_cum_prev * beta_mult)
@@ -361,4 +382,20 @@ class DiffusionUnet(nn.Module):
             return x, collected_latents
         else:
             return x
+        
+    def load_from_file(path):
+        saved = torch.load(path)
+        model_hyperparameters = saved["model_hyperparameters"]
+        model = DiffusionUnet(
+            **model_hyperparameters
+        )
+        model.load_state_dict(saved["weights"])
+        
+        # TODO we assume a CosineSchedule here
+        noise_schedule = CosineSchedule(model_hyperparameters["timesteps"], device="cuda")
+
+        del saved
+        torch.cuda.empty_cache()
+
+        return model, noise_schedule
 

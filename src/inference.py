@@ -6,7 +6,7 @@ import os
 from torchvision import transforms
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-saved = torch.load("weights/model_6.pth")
+saved = torch.load("pretrained_models/model_6.pth")
 model_hyperparameters = saved["model_hyperparameters"]
 image_size = saved["image_size"]
 
@@ -24,16 +24,15 @@ collect_latents = False
 save_grid = True
 save_individual = False
 
-z = torch.randn((5**2, 3, image_size, image_size), device=device) * 1
-with torch.autocast(device_type="cuda"):
+# seed
+torch.manual_seed(2008098024)
+#model = model.half()
 
-    sample = model.sample(z, noise_schedule, collect_latents=collect_latents, beta_mult=0.27)
+z = torch.randn((4, 3, image_size, image_size), device=device) * 1
+zeroing_modules = set()
 
-# images = images.cpu()
-# images = (images + 1) / 2
-# images = torch.clamp(images, 0, 1)
-# images = images.permute(0, 2, 3, 1)
-# images = images*255
+
+sample = model.sample(z, noise_schedule, collect_latents=collect_latents, beta_mult=0.35, zeroing_modules=zeroing_modules)
 
 sample = (sample + 1) / 2
 output_dir = "generations"

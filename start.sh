@@ -1,0 +1,3 @@
+gdown 1mCnGWQFQ270c2elMwTNxqzs5ZdVJEFmn
+unzip dataset.zip
+pip install tensorboard

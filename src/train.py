@@ -43,7 +43,6 @@ timesteps = model_hyperparameters["timesteps"]
 in_channels = model_hyperparameters["in_channels"]
 
 
-summary_writer = tensorboard.SummaryWriter()
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, drop_last=True)
 scaler = torch.cuda.amp.GradScaler()
 
@@ -73,6 +72,8 @@ else:
     )
     
 model.to(device)
+model_id = hash(str(model_hyperparameters))
+summary_writer = tensorboard.SummaryWriter(log_dir="runs/model_{model_id}")
 
     
 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -140,7 +141,7 @@ for epoch in range(initial_epoch,epochs):
             "weights":model.state_dict(),
             "model_hyperparameters":model_hyperparameters,
             "image_size":image_size,
-            "steps":steps,
+            "steps":steps//iters_to_accumulate,
             "epochs":epoch,
             "batch_size":batch_size,
             "lr":lr

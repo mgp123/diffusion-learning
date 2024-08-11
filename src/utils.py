@@ -13,7 +13,7 @@ def generate_and_upscale(n):
     saved = torch.load("pretrained_models/model_6.pth")
     model_hyperparameters = saved["model_hyperparameters"]
     image_size = saved["image_size"]
-    
+    print(model_hyperparameters)
     model = DiffusionUnet(
     **model_hyperparameters
 )
@@ -24,7 +24,8 @@ def generate_and_upscale(n):
     model.eval()
     
     torch.manual_seed(2024)
-    
+    torch.manual_seed(2008098024)
+
     z = torch.randn((n, 3, image_size, image_size), device=device)
     with torch.autocast(device_type="cuda"):
         sample_low = model.sample(z, noise_schedule, beta_mult=0.34)
@@ -65,17 +66,19 @@ def generate_and_upscale(n):
     torchvision.utils.save_image(
         out, 
         f"pepe3.png", 
-        nrow=torch.sqrt(torch.tensor(out.shape[0])).int(),
+        #nrow=torch.sqrt(torch.tensor(out.shape[0])).int(),
+        nrow=6,
         padding=0
         )
     sample_high = (sample_high + 1) / 2
     torchvision.utils.save_image(
             sample_high, 
             f"pepe3_high.png", 
+            #nrow=2,
             nrow=torch.sqrt(torch.tensor(out.shape[0])).int(),
             padding=0
             )
     
     return sample_high
 
-generate_and_upscale(80)
+generate_and_upscale(12)
