@@ -237,6 +237,14 @@ The model consists of a simple U-Net with residual connections. Contrary to popu
 
 *Image Saving* at specified intervals, the script saves generated images to a designated directory. Ensure to set the `sample_every` variable to control how frequently images are saved during training.
 
+## Using pretrained models
+We provide several pretrained models for use. See `python src/inference.py` and `python src/utils.py` for example usages.
+| Name     | Task                       | Number of Parameters | Description                                           |
+|----------|----------------------------|----------------------|-------------------------------------------------------|
+| Celeb1   | Unconditional generation    | ~122 million          | Trained on CelebA for unconditional generation.        |
+| Celeb2   | Unconditional generation    | ~122 million          | Further training of Celeb1.                            |
+| PathMinst| Unconditional generation    | ~122 million          | Style transfer of Celeb2 into a medical dataset.       |
+| Super    | Super-resolution            | ~30 million          | 64x64 to 128x128 CelebA super-resolution.              |
 
 
 ## References
