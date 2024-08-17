@@ -231,7 +231,7 @@ The script is structured to initialize the model with specified hyperparameters.
 
 The model consists of a simple U-Net with residual connections. Contrary to popular implementations, we feed the variance of the diffusion step directly to the model instead of the timestep itself.
 
-*Optional Model Loading*. If you wish to continue training from a pre-trained model, set the conditional statement to `True` and specify the path to your `.pth` file containing the model weights and hyperparameters.
+*Optional Model Loading*. If you wish to continue training from a pretrained model you can do so using `python src/train.py resume <path.pth>` with the appropiate unconditional model path
 
 *TensorBoard logging* losses. This allows for real-time monitoring of the model's performance. To view these logs, run `tensorboard --logdir=runs` from your terminal.
 
