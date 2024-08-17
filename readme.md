@@ -162,8 +162,8 @@ $$=   \left( \sum_{t=0:T-1} -KL\left(p(X_t|X_{t+1}) \mid \mid p_\theta(X_t|X_{t+
 
 **So we are truly learning the markov model backward dynamics!**
 
-
-## The $x_t|x_{t+1},x_0$ distribution is gaussian
+! commented because I did not expanded this
+!## The $x_t|x_{t+1},x_0$ distribution is gaussian
 
 
 ## How do we even sample such a thing?
