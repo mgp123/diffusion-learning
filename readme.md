@@ -4,7 +4,7 @@
 ![thumbnail](img/thumbnail.png)
 
 
-A short review of diffusion models based on my understanding Diffusion models are generative models, ie they try to imitate a distribution
+A short review and a barebones implementation of diffusion models in pytorch based on my understanding. Diffusion models are generative models, ie they try to imitate a distribution
 
 ## The diffsuion markov chain
 
