@@ -239,16 +239,17 @@ The model consists of a simple U-Net with residual connections. Contrary to popu
 
 ## Using pretrained models
 We provide several pretrained models for use. See `python src/inference.py` and `python src/utils.py` for example usages.
-| Name     | Task                       | Number of Parameters | Description                                           |
-|----------|----------------------------|----------------------|-------------------------------------------------------|
-| Celeb1   | Unconditional generation    | ~122 million          | Trained on CelebA for unconditional generation.        |
-| Celeb2   | Unconditional generation    | ~122 million          | Further training of Celeb1.                            |
-| PathMinst| Unconditional generation    | ~122 million          | Style transfer of Celeb2 into a medical dataset.       |
-| Super    | Super-resolution            | ~30 million          | 64x64 to 128x128 CelebA super-resolution.              |
+| Name     | Task                       | Number of Parameters | Description                                           | Model |
+|----------|----------------------------|----------------------|-------------------------------------------------------|-------|
+| Celeb1   | Unconditional generation    | ~122 million          | Trained on CelebA for unconditional generation.        | [celeb1](https://storage.cloud.google.com/open-pretrained-weights/celeb1.pth)  |
+| Celeb2   | Unconditional generation    | ~122 million          | Further training of Celeb1.                            | -  |
+| PathMinst| Unconditional generation    | ~122 million          | Style transfer of Celeb2 into a medical dataset.       | -  |
+| Super    | Super-resolution            | ~30 million          | 64x64 to 128x128 CelebA super-resolution.              |  [super](https://storage.cloud.google.com/open-pretrained-weights/super.pth)    |
 
 
 ## References
 - Denoising Diffusion Probabilistic Models. *Jonathan Ho, Ajay Jain, Pieter Abbeel*. [Paper](https://arxiv.org/abs/2006.11239)
 - https://lilianweng.github.io/posts/2021-07-11-diffusion-models/ 
 - Denoising Diffusion-based Generative Modeling: Foundations and Applications. *Karsten Kreis Ruiqi Gao Arash Vahdat*. [Link](https://cvpr2022-tutorial-diffusion-models.github.io/). This is a *really good one*
+- Step by Step visual introduction to Diffusion Models.*Kemal Erdem*. [Link](https://erdem.pl/2023/11/step-by-step-visual-introduction-to-diffusion-models). Our architecture is inspired in this one (but with important simplifications/differences)
 
