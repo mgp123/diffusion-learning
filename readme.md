@@ -241,10 +241,10 @@ The model consists of a simple U-Net with residual connections. Contrary to popu
 We provide several pretrained models for use. See `python src/inference.py` and `python src/utils.py` for example usages.
 | Name     | Task                       | Number of Parameters | Description                                           | Model |
 |----------|----------------------------|----------------------|-------------------------------------------------------|-------|
-| Celeb1   | Unconditional generation    | ~122 million          | Trained on CelebA for unconditional generation.        | [celeb1](https://storage.cloud.google.com/open-pretrained-weights/celeb1.pth)  |
-| Celeb2   | Unconditional generation    | ~122 million          | Further training of Celeb1.                            | -  |
-| PathMinst| Unconditional generation    | ~122 million          | Style transfer of Celeb2 into a medical dataset.       | -  |
-| Super    | Super-resolution            | ~30 million          | 64x64 to 128x128 CelebA super-resolution.              |  [super](https://storage.cloud.google.com/open-pretrained-weights/super.pth)    |
+| Celeb1   | Unconditional generation    | ~122 million          | Trained on CelebA for unconditional generation.        | [celeb1](https://storage.googleapis.com/open-pretrained-weights/celeb1.pth)  |
+| Celeb2   | Unconditional generation    | ~122 million          | Further training of Celeb1.                            | [celeb2](https://storage.googleapis.com/open-pretrained-weights/celeb2.pth)  |
+| PathMinst| Unconditional generation    | ~122 million          | Style transfer of Celeb2 into a medical dataset.       | [medmnist](https://storage.googleapis.com/open-pretrained-weights/medminst.pth)  |
+| Super    | Super-resolution            | ~30 million          | 64x64 to 128x128 CelebA super-resolution.              |  [super](https://storage.googleapis.com/open-pretrained-weights/super.pth)    |
 
 
 ## References
