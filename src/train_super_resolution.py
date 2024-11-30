@@ -8,7 +8,7 @@ from model import DiffusionUnet
 from noise_scheudle import CosineSchedule, LinearSchedule
 
 image_size =  128
-image_size_small = 64
+image_size_small = 16
 dataset = torchvision.datasets.ImageFolder(
     root='dataset', 
     transform= transforms.Compose([
@@ -23,7 +23,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 # training hyperparameters 
-lr=2e-4
+lr=5e-5
 sample_every = 500
 epochs = 40
 batch_size = 20
@@ -55,8 +55,8 @@ model = DiffusionUnet(
     **model_hyperparameters
     ).to(device)
 
-if False:
-    saved = torch.load("weights_super_resolution/model_0.pth")
+if True:
+    saved = torch.load("weights_super_resolution/model_16x16_10.pth")
     model.load_state_dict(saved["weights"])
     model.to(device)
 
@@ -65,7 +65,7 @@ if False:
 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 # training loop
 steps = 0
-for epoch in range(0,epochs):
+for epoch in range(11,epochs):
     for x,_ in tqdm(dataloader):
         # optimizer stuff
         x = x.to(device)
@@ -85,18 +85,17 @@ for epoch in range(0,epochs):
         cumul_alpha = noise_schedule.cumul_alpha(t).to(device).view(*target_shape)
         cumul_beta = noise_schedule.cumul_beta(t).to(device).view(*target_shape) 
         
-        with torch.autocast(device_type="cuda"):
 
-            x_t = torch.sqrt(cumul_alpha)* x + torch.sqrt(cumul_beta) * epsilon
+        x_t = torch.sqrt(cumul_alpha)* x + torch.sqrt(cumul_beta) * epsilon
+    
+        # predicted_epsilon = model(x_t, t) 
+        v = torch.sqrt(cumul_beta)[:,:,0,0]
         
-            # predicted_epsilon = model(x_t, t) 
-            v = torch.sqrt(cumul_beta)[:,:,0,0]
-            
-            model_input = torch.cat([x_t, x_low], dim=1)
-            predicted_epsilon = model(model_input, v )
-            
-            # error prediction and backprop
-            loss = torch.nn.functional.mse_loss(predicted_epsilon, epsilon)
+        model_input = torch.cat([x_t, x_low], dim=1)
+        predicted_epsilon = model(model_input, v )
+        
+        # error prediction and backprop
+        loss = torch.nn.functional.mse_loss(predicted_epsilon, epsilon)
             
         scaler.scale(loss).backward()
         steps += 1
@@ -128,7 +127,7 @@ for epoch in range(0,epochs):
             "model_hyperparameters":model_hyperparameters,
             "image_size":image_size,
         },
-        f"weights_super_resolution/model_{epoch}.pth")    
+        f"weights_super_resolution/model_16x16_{epoch}.pth")    
     
 summary_writer.flush()
     
